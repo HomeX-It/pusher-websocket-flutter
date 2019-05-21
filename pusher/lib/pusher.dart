@@ -47,4 +47,5 @@ class Event {
 
 class Channel {
   void bind(String eventName, Function(Event) onEvent) {}
+  void unbind(String eventName) {}
 }
