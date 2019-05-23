@@ -20,22 +20,21 @@ class _MyAppState extends State<MyApp> {
     initPlatformState();
   }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
     String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
     try {
       await Pusher.init("APP_KEY", PusherOptions(cluster: "us2"));
-      await Pusher.connect();
+      await Pusher.connect(onConnectionStateChange: (x) {
+        print("Connection state from ${x.previousState} to ${x.currentState}");
+      }, onError: (x) {
+        print("Error: ${x.message}");
+      });
       var channel = await Pusher.subscribe("my-channel");
       await channel.bind("my-event", (_) {});
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
 
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
     if (!mounted) return;
 
     setState(() {
