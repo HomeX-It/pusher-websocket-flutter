@@ -13,8 +13,8 @@ class Pusher {
   static Future init(String appKey, PusherOptions options) async {
     assert(appKey != null);
     assert(options != null);
-    final init = jsonEncode(_Init(appKey, options).toJson());
-    await _channel.invokeMethod('init', init);
+    final initArgs = jsonEncode(_InitArgs(appKey, options).toJson());
+    await _channel.invokeMethod('init', initArgs);
   }
 
   /// Connect the client to pusher
@@ -41,18 +41,39 @@ class Pusher {
   static Future unsubscribe(String channelName) async {
     await _channel.invokeMethod('unsubscribe', channelName);
   }
+
+  static Future _bind(String channelName, String eventName,
+      {Function(Event) onEvent}) async {
+    final bindArgs = jsonEncode(
+        _BindArgs(channelName: channelName, eventName: eventName).toJson());
+    await _channel.invokeMethod('bind', bindArgs);
+  }
 }
 
 @JsonSerializable()
-class _Init {
+class _InitArgs {
   String appKey;
   PusherOptions options;
 
-  _Init(this.appKey, this.options);
+  _InitArgs(this.appKey, this.options);
 
-  factory _Init.fromJson(Map<String, dynamic> json) => _$_InitFromJson(json);
+  factory _InitArgs.fromJson(Map<String, dynamic> json) =>
+      _$_InitArgsFromJson(json);
 
-  Map<String, dynamic> toJson() => _$_InitToJson(this);
+  Map<String, dynamic> toJson() => _$_InitArgsToJson(this);
+}
+
+@JsonSerializable()
+class _BindArgs {
+  String channelName;
+  String eventName;
+
+  _BindArgs({this.channelName, this.eventName});
+
+  factory _BindArgs.fromJson(Map<String, dynamic> json) =>
+      _$_BindArgsFromJson(json);
+
+  Map<String, dynamic> toJson() => _$_BindArgsToJson(this);
 }
 
 @JsonSerializable()
@@ -82,6 +103,9 @@ class Channel {
 
   Channel({this.name});
 
-  void bind(String eventName, Function(Event) onEvent) {}
+  Future bind(String eventName, Function(Event) onEvent) async {
+    await Pusher._bind(name, eventName);
+  }
+
   void unbind(String eventName) {}
 }

@@ -3,6 +3,10 @@ package com.pusherwebsocket.pusher;
 import com.pusher.client.Pusher;
 import com.pusher.client.PusherOptions;
 import com.pusher.client.channel.Channel;
+import com.pusher.client.channel.SubscriptionEventListener;
+import com.pusher.client.connection.ConnectionEventListener;
+import com.pusher.client.connection.ConnectionState;
+import com.pusher.client.connection.ConnectionStateChange;
 
 import org.json.JSONObject;
 
@@ -66,7 +70,18 @@ public class PusherPlugin implements MethodCallHandler {
   }
 
   private void connect(MethodCall call, Result result) {
-    pusher.connect();
+    pusher.connect(new ConnectionEventListener() {
+      @Override
+      public void onConnectionStateChange(ConnectionStateChange change) {
+        System.out.println("State changed to " + change.getCurrentState() +
+                " from " + change.getPreviousState());
+      }
+
+      @Override
+      public void onError(String message, String code, Exception e) {
+        System.out.println("There was a problem connecting!");
+      }
+    }, ConnectionState.ALL);
     result.success(null);
   }
 
@@ -89,5 +104,23 @@ public class PusherPlugin implements MethodCallHandler {
   }
 
   private void bind(MethodCall call, Result result) {
+    try {
+      JSONObject json = new JSONObject(call.arguments.toString());
+      String channelName = json.getString("channelName");
+      String eventName = json.getString("eventName");
+
+      Channel channel = channels.get(channelName);
+
+      channel.bind(eventName, new SubscriptionEventListener() {
+        @Override
+        public void onEvent(String channel, String event, String data) {
+          System.out.println("Received event with data: " + data);
+        }
+      });
+
+      result.success(null);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 }
