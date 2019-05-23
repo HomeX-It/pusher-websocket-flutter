@@ -25,7 +25,10 @@ class _MyAppState extends State<MyApp> {
     String platformVersion;
     // Platform messages may fail, so we use a try/catch PlatformException.
     try {
-      await Pusher.init("test", PusherOptions(cluster: "test2"));
+      await Pusher.init("APP_KEY", PusherOptions(cluster: "us2"));
+      await Pusher.connect();
+      var channel = await Pusher.subscribe("my-channel");
+      await channel.bind("my-event", (_) {});
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
