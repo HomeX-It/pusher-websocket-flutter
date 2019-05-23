@@ -43,6 +43,8 @@ public class PusherPlugin implements MethodCallHandler {
       subscribe(call, result);
     } else if (call.method.equals("unsubscribe")) {
       unsubscribe(call, result);
+    } else if (call.method.equals("bind")) {
+      bind(call, result);
     } else {
       result.notImplemented();
     }
