@@ -16,8 +16,8 @@ public class PusherPlugin implements MethodCallHandler {
 
   @Override
   public void onMethodCall(MethodCall call, Result result) {
-    if (call.method.equals("getPlatformVersion")) {
-      result.success("Android " + android.os.Build.VERSION.RELEASE);
+    if (call.method.equals("init")) {
+      //todo
     } else {
       result.notImplemented();
     }

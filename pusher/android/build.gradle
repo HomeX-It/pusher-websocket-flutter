@@ -31,4 +31,7 @@ android {
     lintOptions {
         disable 'InvalidPackage'
     }
+    dependencies {
+        implementation 'com.pusher:pusher-java-client:1.8.2'
+    }
 }

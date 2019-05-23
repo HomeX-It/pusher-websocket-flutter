@@ -1,4 +1,8 @@
 import 'package:flutter/services.dart';
+import 'package:json_annotation/json_annotation.dart';
+import 'dart:convert';
+
+part 'pusher.g.dart';
 
 class Pusher {
   Pusher._();
@@ -6,16 +10,11 @@ class Pusher {
   static const MethodChannel _channel = const MethodChannel('pusher');
   static Map<String, Channel> _subscriptions = Map<String, Channel>();
 
-  /// Your pusher.com app key
-  static String appKey;
-
-  /// Pusher options. Example: the cluster to connect to
-  static PusherOptions options;
-
-  //todo remove
-  static Future<String> get platformVersion async {
-    final String version = await _channel.invokeMethod('getPlatformVersion');
-    return version;
+  static Future init(String appKey, PusherOptions options) async {
+    assert(appKey != null);
+    assert(options != null);
+    final init = jsonEncode(_Init(appKey, options).toJson());
+    final String version = await _channel.invokeMethod('init', init);
   }
 
   /// Connect the client to pusher
@@ -31,8 +30,28 @@ class Pusher {
   static Future<Channel> subscribe(String channelName) async {}
 }
 
+@JsonSerializable()
+class _Init {
+  String appKey;
+  PusherOptions options;
+
+  _Init(this.appKey, this.options);
+
+  factory _Init.fromJson(Map<String, dynamic> json) => _$_InitFromJson(json);
+
+  Map<String, dynamic> toJson() => _$_InitToJson(this);
+}
+
+@JsonSerializable()
 class PusherOptions {
   String cluster;
+
+  PusherOptions({this.cluster});
+
+  factory PusherOptions.fromJson(Map<String, dynamic> json) =>
+      _$PusherOptionsFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PusherOptionsToJson(this);
 }
 
 class ConnectionStateChange {}
