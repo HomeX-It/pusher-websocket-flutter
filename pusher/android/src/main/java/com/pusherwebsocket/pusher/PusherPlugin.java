@@ -10,6 +10,7 @@ import com.pusher.client.connection.ConnectionEventListener;
 import com.pusher.client.connection.ConnectionState;
 import com.pusher.client.connection.ConnectionStateChange;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
@@ -102,13 +103,35 @@ public class PusherPlugin implements MethodCallHandler {
     pusher.connect(new ConnectionEventListener() {
       @Override
       public void onConnectionStateChange(ConnectionStateChange change) {
-        System.out.println("State changed to " + change.getCurrentState() +
-                " from " + change.getPreviousState());
+        try {
+          JSONObject eventStreamMessageJson = new JSONObject();
+          JSONObject connectionStateChangeJson = new JSONObject();
+          connectionStateChangeJson.put("currentState", change.getCurrentState().toString());
+          connectionStateChangeJson.put("previousState", change.getPreviousState().toString());
+          eventStreamMessageJson.put("connectionStateChange", connectionStateChangeJson);
+          eventSinks.success(eventStreamMessageJson.toString());
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
       }
 
       @Override
-      public void onError(String message, String code, Exception e) {
-        System.out.println("There was a problem connecting!");
+      public void onError(String message, String code, Exception ex) {
+        try {
+          String exMessage = null;
+          if (ex != null)
+            exMessage = ex.getMessage();
+
+          JSONObject eventStreamMessageJson = new JSONObject();
+          JSONObject connectionErrorJson = new JSONObject();
+          connectionErrorJson.put("message", message);
+          connectionErrorJson.put("code", code);
+          connectionErrorJson.put("exception", exMessage);
+          eventStreamMessageJson.put("connectionError", connectionErrorJson);
+          eventSinks.success(eventStreamMessageJson.toString());
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
       }
     }, ConnectionState.ALL);
     result.success(null);
@@ -143,7 +166,17 @@ public class PusherPlugin implements MethodCallHandler {
       channel.bind(eventName, new SubscriptionEventListener() {
         @Override
         public void onEvent(String channel, String event, String data) {
-          System.out.println("Received event with data: " + data);
+          try {
+            JSONObject eventStreamMessageJson = new JSONObject();
+            JSONObject eventJson = new JSONObject();
+            eventJson.put("channel", channel);
+            eventJson.put("event", event);
+            eventJson.put("data", data);
+            eventStreamMessageJson.put("event", eventJson);
+            eventSinks.success(eventStreamMessageJson.toString());
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
         }
       });
 

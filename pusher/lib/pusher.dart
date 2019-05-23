@@ -10,6 +10,9 @@ class Pusher {
   static const _channel = const MethodChannel('pusher');
   static const _eventChannel = const EventChannel('pusherStream');
 
+  static void Function(ConnectionStateChange) _onConnectionStateChange;
+  static void Function(ConnectionError) _onError;
+
   static Future init(String appKey, PusherOptions options) async {
     assert(appKey != null);
     assert(options != null);
@@ -21,13 +24,31 @@ class Pusher {
   }
 
   static void _handleEvent([dynamic arguments]) {
-    print("hanlded event");
+    if (arguments == null || !(arguments is String)) {
+      //TODO log
+    }
+
+    var message = PusherEventStreamMessage.fromJson(jsonDecode(arguments));
+
+    if (message.isEvent) {
+      print(message.event.data);
+    } else if (message.isConnectionStateChange) {
+      if (_onConnectionStateChange != null) {
+        _onConnectionStateChange(message.connectionStateChange);
+      }
+    } else if (message.isConnectionError) {
+      if (_onError != null) {
+        _onError(message.connectionError);
+      }
+    }
   }
 
   /// Connect the client to pusher
   static Future connect(
-      {Function(ConnectionStateChange) onConnectionStateChange,
-      Function(ConnectionError) onError}) async {
+      {void Function(ConnectionStateChange) onConnectionStateChange,
+      void Function(ConnectionError) onError}) async {
+    _onConnectionStateChange = onConnectionStateChange;
+    _onError = onError;
     await _channel.invokeMethod('connect');
   }
 
@@ -95,14 +116,44 @@ class PusherOptions {
   Map<String, dynamic> toJson() => _$PusherOptionsToJson(this);
 }
 
-class ConnectionStateChange {}
+@JsonSerializable()
+class ConnectionStateChange {
+  String currentState;
+  String previousState;
 
-class ConnectionError {}
+  ConnectionStateChange({this.currentState, this.previousState});
 
+  factory ConnectionStateChange.fromJson(Map<String, dynamic> json) =>
+      _$ConnectionStateChangeFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ConnectionStateChangeToJson(this);
+}
+
+@JsonSerializable()
+class ConnectionError {
+  String message;
+  String code;
+  String exception;
+
+  ConnectionError({this.message, this.code, this.exception});
+
+  factory ConnectionError.fromJson(Map<String, dynamic> json) =>
+      _$ConnectionErrorFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ConnectionErrorToJson(this);
+}
+
+@JsonSerializable()
 class Event {
   String channel;
   String event;
   String data;
+
+  Event({this.channel, this.event, this.data});
+
+  factory Event.fromJson(Map<String, dynamic> json) => _$EventFromJson(json);
+
+  Map<String, dynamic> toJson() => _$EventToJson(this);
 }
 
 class Channel {
@@ -115,4 +166,23 @@ class Channel {
   }
 
   void unbind(String eventName) {}
+}
+
+@JsonSerializable()
+class PusherEventStreamMessage {
+  Event event;
+  ConnectionStateChange connectionStateChange;
+  ConnectionError connectionError;
+
+  bool get isEvent => event != null;
+  bool get isConnectionStateChange => connectionStateChange != null;
+  bool get isConnectionError => connectionError != null;
+
+  PusherEventStreamMessage(
+      {this.event, this.connectionStateChange, this.connectionError});
+
+  factory PusherEventStreamMessage.fromJson(Map<String, dynamic> json) =>
+      _$PusherEventStreamMessageFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PusherEventStreamMessageToJson(this);
 }
