@@ -14,7 +14,7 @@ class Pusher {
     assert(appKey != null);
     assert(options != null);
     final init = jsonEncode(_Init(appKey, options).toJson());
-    final String version = await _channel.invokeMethod('init', init);
+    await _channel.invokeMethod('init', init);
   }
 
   /// Connect the client to pusher
