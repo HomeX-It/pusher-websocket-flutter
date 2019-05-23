@@ -13,6 +13,7 @@ class Pusher {
   static void Function(ConnectionStateChange) _onConnectionStateChange;
   static void Function(ConnectionError) _onError;
 
+  /// Setup app key and options
   static Future init(String appKey, PusherOptions options) async {
     assert(appKey != null);
     assert(options != null);
@@ -21,26 +22,6 @@ class Pusher {
 
     final initArgs = jsonEncode(_InitArgs(appKey, options).toJson());
     await _channel.invokeMethod('init', initArgs);
-  }
-
-  static void _handleEvent([dynamic arguments]) {
-    if (arguments == null || !(arguments is String)) {
-      //TODO log
-    }
-
-    var message = PusherEventStreamMessage.fromJson(jsonDecode(arguments));
-
-    if (message.isEvent) {
-      print(message.event.data);
-    } else if (message.isConnectionStateChange) {
-      if (_onConnectionStateChange != null) {
-        _onConnectionStateChange(message.connectionStateChange);
-      }
-    } else if (message.isConnectionError) {
-      if (_onError != null) {
-        _onError(message.connectionError);
-      }
-    }
   }
 
   /// Connect the client to pusher
@@ -64,8 +45,7 @@ class Pusher {
     return Channel(name: channelName);
   }
 
-  /// Subscribe to a channel
-  /// Use the returned [Channel] to bind events
+  /// Unsubscribe from a channel
   static Future unsubscribe(String channelName) async {
     await _channel.invokeMethod('unsubscribe', channelName);
   }
@@ -75,6 +55,26 @@ class Pusher {
     final bindArgs = jsonEncode(
         _BindArgs(channelName: channelName, eventName: eventName).toJson());
     await _channel.invokeMethod('bind', bindArgs);
+  }
+
+  static void _handleEvent([dynamic arguments]) {
+    if (arguments == null || !(arguments is String)) {
+      //TODO log
+    }
+
+    var message = PusherEventStreamMessage.fromJson(jsonDecode(arguments));
+
+    if (message.isEvent) {
+      print(message.event.data);
+    } else if (message.isConnectionStateChange) {
+      if (_onConnectionStateChange != null) {
+        _onConnectionStateChange(message.connectionStateChange);
+      }
+    } else if (message.isConnectionError) {
+      if (_onError != null) {
+        _onError(message.connectionError);
+      }
+    }
   }
 }
 
@@ -161,6 +161,7 @@ class Channel {
 
   Channel({this.name});
 
+  /// Bind to listen for events sent on the given channel
   Future bind(String eventName, Function(Event) onEvent) async {
     await Pusher._bind(name, eventName);
   }
