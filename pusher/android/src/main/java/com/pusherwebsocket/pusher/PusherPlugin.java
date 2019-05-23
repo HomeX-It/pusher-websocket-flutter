@@ -1,5 +1,7 @@
 package com.pusherwebsocket.pusher;
 
+import android.util.Log;
+
 import com.pusher.client.Pusher;
 import com.pusher.client.PusherOptions;
 import com.pusher.client.channel.Channel;
@@ -13,6 +15,7 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -25,28 +28,53 @@ public class PusherPlugin implements MethodCallHandler {
   private Pusher pusher;
   private Map<String, Channel> channels = new HashMap<>();
 
+  private static EventChannel.EventSink eventSinks;
+  private static String tag = "FLUTTER-PUSHER";
+
   /** Plugin registration. */
   public static void registerWith(Registrar registrar) {
     final MethodChannel channel = new MethodChannel(registrar.messenger(), "pusher");
     channel.setMethodCallHandler(new PusherPlugin());
+
+    EventChannel eventStream = new EventChannel(registrar.messenger(), "pusherStream");
+    eventStream.setStreamHandler(new EventChannel.StreamHandler() {
+      @Override
+      public void onListen(Object args, final EventChannel.EventSink events) {
+        Log.d(tag, "setStreamHandler onListen");
+        eventSinks = events;
+      }
+
+      @Override
+      public void onCancel(Object args) {
+        Log.d(tag, "setStreamHandler onCancel");
+      }
+    });
   }
 
   @Override
   public void onMethodCall(MethodCall call, Result result) {
-    if (call.method.equals("init")) {
-      init(call, result);
-    } else if (call.method.equals("connect")) {
-      connect(call, result);
-    } else if (call.method.equals("disconnect")) {
-      disconnect(call, result);
-    } else if (call.method.equals("subscribe")) {
-      subscribe(call, result);
-    } else if (call.method.equals("unsubscribe")) {
-      unsubscribe(call, result);
-    } else if (call.method.equals("bind")) {
-      bind(call, result);
-    } else {
-      result.notImplemented();
+    switch (call.method) {
+      case "init":
+        init(call, result);
+        break;
+      case "connect":
+        connect(call, result);
+        break;
+      case "disconnect":
+        disconnect(call, result);
+        break;
+      case "subscribe":
+        subscribe(call, result);
+        break;
+      case "unsubscribe":
+        unsubscribe(call, result);
+        break;
+      case "bind":
+        bind(call, result);
+        break;
+      default:
+        result.notImplemented();
+        break;
     }
   }
 
@@ -65,7 +93,6 @@ public class PusherPlugin implements MethodCallHandler {
       pusher = new Pusher(json.getString("appKey"), pusherOptions);
 
       result.success(null);
-
     } catch (Exception e) {
       e.printStackTrace();
     }

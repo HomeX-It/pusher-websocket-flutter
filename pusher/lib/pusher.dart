@@ -7,14 +7,21 @@ part 'pusher.g.dart';
 class Pusher {
   Pusher._();
 
-  static const MethodChannel _channel = const MethodChannel('pusher');
-  static Map<String, Channel> _subscriptions = Map<String, Channel>();
+  static const _channel = const MethodChannel('pusher');
+  static const _eventChannel = const EventChannel('pusherStream');
 
   static Future init(String appKey, PusherOptions options) async {
     assert(appKey != null);
     assert(options != null);
+
+    _eventChannel.receiveBroadcastStream().listen(_handleEvent);
+
     final initArgs = jsonEncode(_InitArgs(appKey, options).toJson());
     await _channel.invokeMethod('init', initArgs);
+  }
+
+  static void _handleEvent([dynamic arguments]) {
+    print("hanlded event");
   }
 
   /// Connect the client to pusher
