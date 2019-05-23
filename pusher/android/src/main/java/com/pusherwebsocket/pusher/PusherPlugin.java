@@ -10,7 +10,6 @@ import com.pusher.client.connection.ConnectionEventListener;
 import com.pusher.client.connection.ConnectionState;
 import com.pusher.client.connection.ConnectionStateChange;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
