@@ -20,14 +20,27 @@ class Pusher {
   /// Connect the client to pusher
   static Future connect(
       {Function(ConnectionStateChange) onConnectionStateChange,
-      Function(ConnectionError) onError}) async {}
+      Function(ConnectionError) onError}) async {
+    await _channel.invokeMethod('connect');
+  }
 
   /// Disconnect the client from pusher
-  static Future disconnect() async {}
+  static Future disconnect() async {
+    await _channel.invokeMethod('disconnect');
+  }
 
   /// Subscribe to a channel
   /// Use the returned [Channel] to bind events
-  static Future<Channel> subscribe(String channelName) async {}
+  static Future<Channel> subscribe(String channelName) async {
+    await _channel.invokeMethod('subscribe', channelName);
+    return Channel(name: channelName);
+  }
+
+  /// Subscribe to a channel
+  /// Use the returned [Channel] to bind events
+  static Future unsubscribe(String channelName) async {
+    await _channel.invokeMethod('unsubscribe', channelName);
+  }
 }
 
 @JsonSerializable()
@@ -65,6 +78,10 @@ class Event {
 }
 
 class Channel {
+  String name;
+
+  Channel({this.name});
+
   void bind(String eventName, Function(Event) onEvent) {}
   void unbind(String eventName) {}
 }

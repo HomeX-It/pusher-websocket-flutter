@@ -33,6 +33,12 @@ public class PusherPlugin implements MethodCallHandler {
       init(call, result);
     } else if (call.method.equals("connect")) {
       connect(call, result);
+    } else if (call.method.equals("disconnect")) {
+      disconnect(call, result);
+    } else if (call.method.equals("subscribe")) {
+      subscribe(call, result);
+    } else if (call.method.equals("unsubscribe")) {
+      unsubscribe(call, result);
     } else {
       result.notImplemented();
     }
