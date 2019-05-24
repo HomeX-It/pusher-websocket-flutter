@@ -12,7 +12,7 @@ PODS:
   - Starscream (3.0.6)
 
 DEPENDENCIES:
-  - Flutter (from `.symlinks/flutter/ios-release`)
+  - Flutter (from `.symlinks/flutter/ios`)
   - pusher (from `.symlinks/plugins/pusher/ios`)
 
 SPEC REPOS:
@@ -24,7 +24,7 @@ SPEC REPOS:
 
 EXTERNAL SOURCES:
   Flutter:
-    :path: ".symlinks/flutter/ios-release"
+    :path: ".symlinks/flutter/ios"
   pusher:
     :path: ".symlinks/plugins/pusher/ios"
 
