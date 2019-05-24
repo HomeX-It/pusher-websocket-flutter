@@ -30,7 +30,6 @@ public class PusherPlugin implements MethodCallHandler {
 
   static EventChannel.EventSink eventSinks;
   private static EventListener eventListener;
-  private static String tag = "FLUTTER-PUSHER";
 
   /** Plugin registration. */
   public static void registerWith(Registrar registrar) {
@@ -42,13 +41,11 @@ public class PusherPlugin implements MethodCallHandler {
     eventStream.setStreamHandler(new EventChannel.StreamHandler() {
       @Override
       public void onListen(Object args, final EventChannel.EventSink events) {
-        Log.d(tag, "setStreamHandler onListen");
         eventSinks = events;
       }
 
       @Override
       public void onCancel(Object args) {
-        Log.d(tag, "setStreamHandler onCancel");
       }
     });
   }
