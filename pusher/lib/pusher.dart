@@ -13,6 +13,9 @@ class Pusher {
   static void Function(ConnectionStateChange) _onConnectionStateChange;
   static void Function(ConnectionError) _onError;
 
+  static Map<String, void Function(Event)> eventCallbacks =
+      Map<String, void Function(Event)>();
+
   /// Setup app key and options
   static Future init(String appKey, PusherOptions options) async {
     assert(appKey != null);
@@ -54,6 +57,7 @@ class Pusher {
       {Function(Event) onEvent}) async {
     final bindArgs = jsonEncode(
         _BindArgs(channelName: channelName, eventName: eventName).toJson());
+    eventCallbacks[channelName + eventName] = onEvent;
     await _channel.invokeMethod('bind', bindArgs);
   }
 
@@ -65,7 +69,13 @@ class Pusher {
     var message = PusherEventStreamMessage.fromJson(jsonDecode(arguments));
 
     if (message.isEvent) {
-      print(message.event.data);
+      var callback =
+          eventCallbacks[message.event.channel + message.event.event];
+      if (callback != null) {
+        callback(message.event);
+      } else {
+        //TODO log
+      }
     } else if (message.isConnectionStateChange) {
       if (_onConnectionStateChange != null) {
         _onConnectionStateChange(message.connectionStateChange);
@@ -163,7 +173,7 @@ class Channel {
 
   /// Bind to listen for events sent on the given channel
   Future bind(String eventName, Function(Event) onEvent) async {
-    await Pusher._bind(name, eventName);
+    await Pusher._bind(name, eventName, onEvent: onEvent);
   }
 
   void unbind(String eventName) {}
