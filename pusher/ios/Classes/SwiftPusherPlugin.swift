@@ -2,12 +2,23 @@ import Flutter
 import UIKit
 import PusherSwift
 
-public class SwiftPusherPlugin: NSObject, FlutterPlugin {
+public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
+    
+    var pusher: Pusher?
+    var channels = [String:PusherChannel]()
+    var eventChannel: FlutterEventChannel?
+    
+    public static var eventSink: FlutterEventSink?
+    
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "pusher", binaryMessenger: registrar.messenger())
         let instance = SwiftPusherPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
+        
+        let eventChannel = FlutterEventChannel(name: "pusherStream", binaryMessenger: registrar.messenger())
+        eventChannel.setStreamHandler(StreamHandler())
     }
+    
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
         case "init":
@@ -27,29 +38,58 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin {
         default:
             result(FlutterMethodNotImplemented)
         }
-        
-        
-        let pusher = Pusher(key: "APP_KEY")
     }
     
     public func setup(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        
+        do {
+            let json = call.arguments as! String
+            let jsonDecoder = JSONDecoder()
+            let setupArgs = try jsonDecoder.decode(SetupArgs.self, from: json.data(using: .utf8)!)
+            
+            let options = PusherClientOptions(
+                host: .cluster(setupArgs.options.cluster)
+            )
+            
+            pusher = Pusher(
+                key: setupArgs.appKey,
+                options: options
+            )
+            pusher!.connection.delegate = self
+            
+            result(nil);
+        } catch {
+            print(error)
+        }
     }
     
     public func connect(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        
+        if let pusherObj = pusher {
+            pusherObj.connect();
+        }
+        result(nil);
     }
     
     public func disconnect(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        
+        if let pusherObj = pusher {
+            pusherObj.disconnect();
+        }
+        result(nil);
     }
     
     public func subscribe(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        
+        if let pusherObj = pusher {
+            let channelName = call.arguments as! String
+            let channel = pusherObj.subscribe(channelName)
+            channels[channelName] = channel;
+        }
     }
     
     public func unsubscribe(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        
+        if let pusherObj = pusher {
+            let channelName = call.arguments as! String
+            pusherObj.unsubscribe(channelName)
+            channels.removeValue(forKey: "channelName")
+        }
     }
     
     public func bind(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -59,4 +99,55 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin {
     public func unbind(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         
     }
+    
+    public func changedConnectionState(from old: ConnectionState, to new: ConnectionState) {
+        do {
+            let stateChange = ConnectionStateChange(currentState: new.stringValue(), previousState: old.stringValue())
+            let message = PusherEventStreamMessage(event: nil, connectionStateChange: stateChange)
+            let jsonEncoder = JSONEncoder()
+            let jsonData = try jsonEncoder.encode(message)
+            let jsonString = String(data: jsonData, encoding: .utf8)
+            if let eventSinkObj = SwiftPusherPlugin.eventSink {
+                eventSinkObj(jsonString)
+            }
+        } catch {
+            print(error)
+        }
+    }
+}
+
+class StreamHandler: NSObject, FlutterStreamHandler {
+    public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+        SwiftPusherPlugin.eventSink = events
+        return nil;
+    }
+    
+    public func onCancel(withArguments arguments: Any?) -> FlutterError? {
+        return nil;
+    }
+}
+
+struct SetupArgs: Codable {
+    var appKey : String
+    var options : Options
+}
+
+struct Options: Codable {
+    var cluster : String
+}
+
+struct PusherEventStreamMessage: Codable {
+    var event: Event?
+    var connectionStateChange: ConnectionStateChange?
+}
+
+struct ConnectionStateChange: Codable {
+    var currentState: String
+    var previousState: String
+}
+
+struct Event: Codable {
+    var channel: String
+    var event: String
+    var data: String
 }
