@@ -12,6 +12,10 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   Event lastEvent;
   String lastConnectionState;
+  Channel channel;
+
+  var channelController = TextEditingController(text: "my-channel");
+  var eventController = TextEditingController(text: "my-event");
 
   @override
   void initState() {
@@ -22,22 +26,6 @@ class _MyAppState extends State<MyApp> {
   Future<void> initPusher() async {
     try {
       await Pusher.init("APP_KEY", PusherOptions(cluster: "us2"));
-      await Pusher.connect(onConnectionStateChange: (x) {
-        print("Connection state from ${x.previousState} to ${x.currentState}");
-        if (mounted)
-          setState(() {
-            lastConnectionState = x.currentState;
-          });
-      }, onError: (x) {
-        print("Error: ${x.message}");
-      });
-      var channel = await Pusher.subscribe("my-channel");
-      await channel.bind("my-event", (x) {
-        if (mounted)
-          setState(() {
-            lastEvent = x;
-          });
-      });
     } on PlatformException catch (e) {
       print(e.message);
     }
@@ -55,52 +43,155 @@ class _MyAppState extends State<MyApp> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
+                _buildInfo(),
+                RaisedButton(
+                  child: Text("Connect"),
+                  onPressed: () {
+                    Pusher.connect(onConnectionStateChange: (x) async {
+                      if (mounted)
+                        setState(() {
+                          lastConnectionState = x.currentState;
+                        });
+                    }, onError: (x) {
+                      debugPrint("Error: ${x.message}");
+                    });
+                  },
+                ),
+                RaisedButton(
+                  child: Text("Disconnect"),
+                  onPressed: () {
+                    Pusher.disconnect();
+                  },
+                ),
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(
-                      "Connection State: ",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    Container(
+                      width: 200,
+                      child: TextField(
+                        controller: channelController,
+                        decoration: InputDecoration(hintText: "Channel"),
+                      ),
                     ),
-                    Text(lastConnectionState ?? "Unknown"),
+                    RaisedButton(
+                      child: Text("Subscribe"),
+                      onPressed: () async {
+                        channel =
+                            await Pusher.subscribe(channelController.text);
+                      },
+                    )
                   ],
                 ),
-                SizedBox(height: 8),
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(
-                      "Last Event Channel: ",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    Container(
+                      width: 200,
+                      child: TextField(
+                        controller: channelController,
+                        decoration: InputDecoration(hintText: "Channel"),
+                      ),
                     ),
-                    Text(lastEvent?.channel ?? ""),
+                    RaisedButton(
+                      child: Text("Unsubscribe"),
+                      onPressed: () async {
+                        channel =
+                            await Pusher.unsubscribe(channelController.text);
+                      },
+                    )
                   ],
                 ),
-                SizedBox(height: 8),
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(
-                      "Last Event Name: ",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    Container(
+                      width: 200,
+                      child: TextField(
+                        controller: eventController,
+                        decoration: InputDecoration(hintText: "Event"),
+                      ),
                     ),
-                    Text(lastEvent?.event ?? ""),
+                    RaisedButton(
+                      child: Text("Bind"),
+                      onPressed: () async {
+                        await channel.bind(eventController.text, (x) {
+                          if (mounted)
+                            setState(() {
+                              lastEvent = x;
+                            });
+                        });
+                      },
+                    )
                   ],
                 ),
-                SizedBox(height: 8),
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(
-                      "Last Event Data: ",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    Container(
+                      width: 200,
+                      child: TextField(
+                        controller: eventController,
+                        decoration: InputDecoration(hintText: "Event"),
+                      ),
                     ),
-                    Text(lastEvent?.data ?? ""),
+                    RaisedButton(
+                      child: Text("Unbind"),
+                      onPressed: () async {
+                        await channel.unbind(eventController.text);
+                      },
+                    )
                   ],
                 ),
               ],
             ),
           )),
+    );
+  }
+
+  Widget _buildInfo() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              "Connection State: ",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text(lastConnectionState ?? "Unknown"),
+          ],
+        ),
+        SizedBox(height: 8),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              "Last Event Channel: ",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text(lastEvent?.channel ?? ""),
+          ],
+        ),
+        SizedBox(height: 8),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              "Last Event Name: ",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text(lastEvent?.event ?? ""),
+          ],
+        ),
+        SizedBox(height: 8),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              "Last Event Data: ",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text(lastEvent?.data ?? ""),
+          ],
+        ),
+      ],
     );
   }
 }
