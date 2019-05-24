@@ -12,8 +12,20 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin {
         switch call.method {
         case "init":
             setup(call, result: result)
+        case "connect":
+            connect(call, result: result)
+        case "disconnect":
+            disconnect(call, result: result)
+        case "subscribe":
+            subscribe(call, result: result)
+        case "unsubscribe":
+            unsubscribe(call, result: result)
+        case "bind":
+            bind(call, result: result)
+        case "unbind":
+            unbind(call, result: result)
         default:
-            return
+            result(FlutterMethodNotImplemented)
         }
         
         
@@ -21,6 +33,30 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin {
     }
     
     public func setup(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        
+    }
+    
+    public func connect(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        
+    }
+    
+    public func disconnect(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        
+    }
+    
+    public func subscribe(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        
+    }
+    
+    public func unsubscribe(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        
+    }
+    
+    public func bind(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        
+    }
+    
+    public func unbind(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         
     }
 }
