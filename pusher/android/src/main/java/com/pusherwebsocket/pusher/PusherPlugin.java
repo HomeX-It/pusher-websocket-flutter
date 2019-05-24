@@ -28,7 +28,8 @@ public class PusherPlugin implements MethodCallHandler {
   private Pusher pusher;
   private Map<String, Channel> channels = new HashMap<>();
 
-  private static EventChannel.EventSink eventSinks;
+  static EventChannel.EventSink eventSinks;
+  private static EventListener eventListener;
   private static String tag = "FLUTTER-PUSHER";
 
   /** Plugin registration. */
@@ -36,6 +37,7 @@ public class PusherPlugin implements MethodCallHandler {
     final MethodChannel channel = new MethodChannel(registrar.messenger(), "pusher");
     channel.setMethodCallHandler(new PusherPlugin());
 
+    eventListener = new EventListener();
     EventChannel eventStream = new EventChannel(registrar.messenger(), "pusherStream");
     eventStream.setStreamHandler(new EventChannel.StreamHandler() {
       @Override
@@ -71,6 +73,9 @@ public class PusherPlugin implements MethodCallHandler {
         break;
       case "bind":
         bind(call, result);
+        break;
+      case "unbind":
+        unbind(call, result);
         break;
       default:
         result.notImplemented();
@@ -161,23 +166,22 @@ public class PusherPlugin implements MethodCallHandler {
       String eventName = json.getString("eventName");
 
       Channel channel = channels.get(channelName);
+      channel.bind(eventName, eventListener);
 
-      channel.bind(eventName, new SubscriptionEventListener() {
-        @Override
-        public void onEvent(String channel, String event, String data) {
-          try {
-            JSONObject eventStreamMessageJson = new JSONObject();
-            JSONObject eventJson = new JSONObject();
-            eventJson.put("channel", channel);
-            eventJson.put("event", event);
-            eventJson.put("data", data);
-            eventStreamMessageJson.put("event", eventJson);
-            eventSinks.success(eventStreamMessageJson.toString());
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
-        }
-      });
+      result.success(null);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+
+  private void unbind(MethodCall call, Result result) {
+    try {
+      JSONObject json = new JSONObject(call.arguments.toString());
+      String channelName = json.getString("channelName");
+      String eventName = json.getString("eventName");
+
+      Channel channel = channels.get(channelName);
+      channel.unbind(eventName, eventListener);
 
       result.success(null);
     } catch (Exception e) {
@@ -185,3 +189,23 @@ public class PusherPlugin implements MethodCallHandler {
     }
   }
 }
+
+class EventListener implements SubscriptionEventListener {
+
+  @Override
+  public void onEvent(String channelName, String eventName, String data) {
+    try {
+      JSONObject eventStreamMessageJson = new JSONObject();
+      JSONObject eventJson = new JSONObject();
+      eventJson.put("channel", channelName);
+      eventJson.put("event", eventName);
+      eventJson.put("data", data);
+      eventStreamMessageJson.put("event", eventJson);
+      PusherPlugin.eventSinks.success(eventStreamMessageJson.toString());
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+}
+
+

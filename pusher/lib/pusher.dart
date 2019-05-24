@@ -61,6 +61,13 @@ class Pusher {
     await _channel.invokeMethod('bind', bindArgs);
   }
 
+  static Future _unbind(String channelName, String eventName) async {
+    final bindArgs = jsonEncode(
+        _BindArgs(channelName: channelName, eventName: eventName).toJson());
+    eventCallbacks.remove(channelName + eventName);
+    await _channel.invokeMethod('unbind', bindArgs);
+  }
+
   static void _handleEvent([dynamic arguments]) {
     if (arguments == null || !(arguments is String)) {
       //TODO log
@@ -176,7 +183,9 @@ class Channel {
     await Pusher._bind(name, eventName, onEvent: onEvent);
   }
 
-  void unbind(String eventName) {}
+  Future unbind(String eventName) async {
+    await Pusher._unbind(name, eventName);
+  }
 }
 
 @JsonSerializable()
