@@ -17,13 +17,15 @@ class Pusher {
       Map<String, void Function(Event)>();
 
   /// Setup app key and options
-  static Future init(String appKey, PusherOptions options) async {
+  static Future init(String appKey, PusherOptions options,
+      {bool enableLogging = false}) async {
     assert(appKey != null);
     assert(options != null);
 
     _eventChannel.receiveBroadcastStream().listen(_handleEvent);
 
-    final initArgs = jsonEncode(_InitArgs(appKey, options).toJson());
+    final initArgs = jsonEncode(
+        _InitArgs(appKey, options, isLoggingEnabled: enableLogging).toJson());
     await _channel.invokeMethod('init', initArgs);
   }
 
@@ -99,8 +101,9 @@ class Pusher {
 class _InitArgs {
   String appKey;
   PusherOptions options;
+  bool isLoggingEnabled;
 
-  _InitArgs(this.appKey, this.options);
+  _InitArgs(this.appKey, this.options, {this.isLoggingEnabled = false});
 
   factory _InitArgs.fromJson(Map<String, dynamic> json) =>
       _$_InitArgsFromJson(json);

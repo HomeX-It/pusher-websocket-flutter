@@ -5,6 +5,7 @@ import PusherSwift
 public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
     
     var pusher: Pusher?
+    var isLoggingEnabled: Bool = false;
     var channels = [String:PusherChannel]()
     var bindedEvents = [String:String]()
     var eventChannel: FlutterEventChannel?
@@ -45,20 +46,27 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
         do {
             let json = call.arguments as! String
             let jsonDecoder = JSONDecoder()
-            let setupArgs = try jsonDecoder.decode(SetupArgs.self, from: json.data(using: .utf8)!)
+            let initArgs = try jsonDecoder.decode(InitArgs.self, from: json.data(using: .utf8)!)
+            
+            isLoggingEnabled = initArgs.isLoggingEnabled
             
             let options = PusherClientOptions(
-                host: .cluster(setupArgs.options.cluster)
+                host: .cluster(initArgs.options.cluster)
             )
             
             pusher = Pusher(
-                key: setupArgs.appKey,
+                key: initArgs.appKey,
                 options: options
             )
             pusher!.connection.delegate = self
-        } catch {
-            print(error)
             
+            if (isLoggingEnabled) {
+                print("Pusher init")
+            }
+        } catch {
+            if (isLoggingEnabled) {
+                print("Pusher init error:" + error.localizedDescription)
+            }
         }
         result(nil);
     }
@@ -66,6 +74,9 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
     public func connect(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         if let pusherObj = pusher {
             pusherObj.connect();
+            if (isLoggingEnabled) {
+                print("Pusher connect")
+            }
         }
         result(nil);
     }
@@ -73,6 +84,9 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
     public func disconnect(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         if let pusherObj = pusher {
             pusherObj.disconnect();
+            if (isLoggingEnabled) {
+                print("Pusher disconnect")
+            }
         }
         result(nil);
     }
@@ -82,6 +96,10 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
             let channelName = call.arguments as! String
             let channel = pusherObj.subscribe(channelName)
             channels[channelName] = channel;
+            
+            if (isLoggingEnabled) {
+                print("Pusher subscribe")
+            }
         }
         result(nil);
     }
@@ -91,6 +109,10 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
             let channelName = call.arguments as! String
             pusherObj.unsubscribe(channelName)
             channels.removeValue(forKey: "channelName")
+            
+            if (isLoggingEnabled) {
+                print("Pusher unsubscribe")
+            }
         }
         result(nil);
     }
@@ -115,16 +137,26 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
                             let jsonString = String(data: jsonData, encoding: .utf8)
                             if let eventSinkObj = SwiftPusherPlugin.eventSink {
                                 eventSinkObj(jsonString)
+                                
+                                if (self.isLoggingEnabled) {
+                                    print("Pusher event: CH:\(bindArgs.channelName) EN:\(bindArgs.eventName) ED:\(jsonString ?? "no data")")
+                                }
                             }
                         }
                     } catch {
-                        print(error)
+                        if (self.isLoggingEnabled) {
+                            print("Pusher bind error:" + error.localizedDescription)
+                        }
                     }
                 })
+                if (isLoggingEnabled) {
+                    print("Pusher bind")
+                }
             }
-            
         } catch {
-            print(error)
+            if (isLoggingEnabled) {
+                print("Pusher bind error:" + error.localizedDescription)
+            }
         }
         result(nil);
     }
@@ -141,11 +173,17 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
                 if let callbackIdObj = callbackId {
                     channelObj.unbind(eventName: bindArgs.channelName, callbackId: callbackIdObj)
                     bindedEvents.removeValue(forKey: bindArgs.channelName + bindArgs.eventName)
+                    
+                    if (isLoggingEnabled) {
+                        print("Pusher unbind")
+                    }
                 }
             }
             
         } catch {
-            print(error)
+            if (isLoggingEnabled) {
+                print("Pusher unbind error:" + error.localizedDescription)
+            }
         }
         result(nil);
     }
@@ -161,7 +199,9 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
                 eventSinkObj(jsonString)
             }
         } catch {
-            print(error)
+            if (isLoggingEnabled) {
+                print("Pusher changedConnectionState error:" + error.localizedDescription)
+            }
         }
     }
 }
@@ -177,13 +217,14 @@ class StreamHandler: NSObject, FlutterStreamHandler {
     }
 }
 
-struct SetupArgs: Codable {
-    var appKey : String
-    var options : Options
+struct InitArgs: Codable {
+    var appKey: String
+    var options: Options
+    var isLoggingEnabled: Bool
 }
 
 struct Options: Codable {
-    var cluster : String
+    var cluster: String
 }
 
 struct PusherEventStreamMessage: Codable {

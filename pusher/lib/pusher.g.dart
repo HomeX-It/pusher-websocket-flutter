@@ -11,11 +11,15 @@ _InitArgs _$_InitArgsFromJson(Map<String, dynamic> json) {
       json['appKey'] as String,
       json['options'] == null
           ? null
-          : PusherOptions.fromJson(json['options'] as Map<String, dynamic>));
+          : PusherOptions.fromJson(json['options'] as Map<String, dynamic>),
+      isLoggingEnabled: json['isLoggingEnabled'] as bool);
 }
 
-Map<String, dynamic> _$_InitArgsToJson(_InitArgs instance) =>
-    <String, dynamic>{'appKey': instance.appKey, 'options': instance.options};
+Map<String, dynamic> _$_InitArgsToJson(_InitArgs instance) => <String, dynamic>{
+      'appKey': instance.appKey,
+      'options': instance.options,
+      'isLoggingEnabled': instance.isLoggingEnabled
+    };
 
 _BindArgs _$_BindArgsFromJson(Map<String, dynamic> json) {
   return _BindArgs(
