@@ -28,8 +28,11 @@ public class PusherPlugin implements MethodCallHandler {
   private Pusher pusher;
   private Map<String, Channel> channels = new HashMap<>();
 
-  static EventChannel.EventSink eventSinks;
   private static EventListener eventListener;
+
+  static EventChannel.EventSink eventSinks;
+  static String TAG = "PusherPlugin";
+  static boolean isLoggingEnabled = false;
 
   /** Plugin registration. */
   public static void registerWith(Registrar registrar) {
@@ -85,6 +88,10 @@ public class PusherPlugin implements MethodCallHandler {
       JSONObject json = new JSONObject(call.arguments.toString());
       JSONObject options  = json.getJSONObject("options");
 
+      if (json.has("isLoggingEnabled")) {
+        isLoggingEnabled = json.getBoolean("isLoggingEnabled");
+      }
+
       // setup options
       PusherOptions pusherOptions = new PusherOptions();
       if (options.has("cluster")) {
@@ -94,9 +101,15 @@ public class PusherPlugin implements MethodCallHandler {
       // create client
       pusher = new Pusher(json.getString("appKey"), pusherOptions);
 
+      if (isLoggingEnabled) {
+        Log.d(TAG, "init");
+      }
       result.success(null);
     } catch (Exception e) {
-      e.printStackTrace();
+      if (isLoggingEnabled) {
+        Log.d(TAG, "init error: " + e.getMessage());
+        e.printStackTrace();
+      }
     }
   }
 
@@ -112,7 +125,10 @@ public class PusherPlugin implements MethodCallHandler {
           eventStreamMessageJson.put("connectionStateChange", connectionStateChangeJson);
           eventSinks.success(eventStreamMessageJson.toString());
         } catch (Exception e) {
-          e.printStackTrace();
+          if (isLoggingEnabled) {
+            Log.d(TAG, "onConnectionStateChange error: " + e.getMessage());
+            e.printStackTrace();
+          }
         }
       }
 
@@ -131,21 +147,34 @@ public class PusherPlugin implements MethodCallHandler {
           eventStreamMessageJson.put("connectionError", connectionErrorJson);
           eventSinks.success(eventStreamMessageJson.toString());
         } catch (Exception e) {
-          e.printStackTrace();
+          if (isLoggingEnabled) {
+            Log.d(TAG, "onError error: " + e.getMessage());
+            e.printStackTrace();
+          }
         }
       }
     }, ConnectionState.ALL);
+
+    if (isLoggingEnabled) {
+      Log.d(TAG, "connect");
+    }
     result.success(null);
   }
 
   private void disconnect(MethodCall call, Result result) {
     pusher.disconnect();
+    if (isLoggingEnabled) {
+      Log.d(TAG, "disconnect");
+    }
     result.success(null);
   }
 
   private void subscribe(MethodCall call, Result result) {
     String channelName = call.arguments.toString();
     channels.put(channelName, pusher.subscribe(channelName));
+    if (isLoggingEnabled) {
+      Log.d(TAG, "subscribe");
+    }
     result.success(null);
   }
 
@@ -153,6 +182,9 @@ public class PusherPlugin implements MethodCallHandler {
     String channelName = call.arguments.toString();
     pusher.unsubscribe(call.arguments.toString());
     channels.remove(channelName);
+    if (isLoggingEnabled) {
+      Log.d(TAG, "unsubscribe");
+    }
     result.success(null);
   }
 
@@ -165,9 +197,15 @@ public class PusherPlugin implements MethodCallHandler {
       Channel channel = channels.get(channelName);
       channel.bind(eventName, eventListener);
 
+      if (isLoggingEnabled) {
+        Log.d(TAG, "bind");
+      }
       result.success(null);
     } catch (Exception e) {
-      e.printStackTrace();
+      if (isLoggingEnabled) {
+        Log.d(TAG, "bind error: " + e.getMessage());
+        e.printStackTrace();
+      }
     }
   }
 
@@ -180,9 +218,15 @@ public class PusherPlugin implements MethodCallHandler {
       Channel channel = channels.get(channelName);
       channel.unbind(eventName, eventListener);
 
+      if (isLoggingEnabled) {
+        Log.d(TAG, "bind");
+      }
       result.success(null);
     } catch (Exception e) {
-      e.printStackTrace();
+      if (isLoggingEnabled) {
+        Log.d(TAG, "unbind error: " + e.getMessage());
+        e.printStackTrace();
+      }
     }
   }
 }
@@ -198,9 +242,16 @@ class EventListener implements SubscriptionEventListener {
       eventJson.put("event", eventName);
       eventJson.put("data", data);
       eventStreamMessageJson.put("event", eventJson);
-      PusherPlugin.eventSinks.success(eventStreamMessageJson.toString());
+      String eventStreamMessageJsonString = eventStreamMessageJson.toString();
+      PusherPlugin.eventSinks.success(eventStreamMessageJsonString);
+      if (PusherPlugin.isLoggingEnabled) {
+        Log.d(PusherPlugin.TAG, "Pusher event: CH:" + channelName + " EN:" + eventName + " ED:" + eventStreamMessageJsonString);
+      }
     } catch (Exception e) {
-      e.printStackTrace();
+      if (PusherPlugin.isLoggingEnabled) {
+        Log.d(PusherPlugin.TAG, "onEvent error: " + e.getMessage());
+        e.printStackTrace();
+      }
     }
   }
 }
