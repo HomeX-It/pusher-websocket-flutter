@@ -1,7 +1,7 @@
 name: pusher
 description: Pusher Flutter Client
 version: 0.0.1
-author: HomeX
+author: HomeX Mobile Team <mobile@homex.com>
 homepage: https://github.com/HomeXLabs/pusher-websocket-flutter
 
 environment:
