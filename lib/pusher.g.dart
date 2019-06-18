@@ -6,8 +6,8 @@ part of 'pusher.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_InitArgs _$_InitArgsFromJson(Map<String, dynamic> json) {
-  return _InitArgs(
+InitArgs _$InitArgsFromJson(Map<String, dynamic> json) {
+  return InitArgs(
       json['appKey'] as String,
       json['options'] == null
           ? null
@@ -15,19 +15,19 @@ _InitArgs _$_InitArgsFromJson(Map<String, dynamic> json) {
       isLoggingEnabled: json['isLoggingEnabled'] as bool);
 }
 
-Map<String, dynamic> _$_InitArgsToJson(_InitArgs instance) => <String, dynamic>{
+Map<String, dynamic> _$InitArgsToJson(InitArgs instance) => <String, dynamic>{
       'appKey': instance.appKey,
       'options': instance.options,
       'isLoggingEnabled': instance.isLoggingEnabled
     };
 
-_BindArgs _$_BindArgsFromJson(Map<String, dynamic> json) {
-  return _BindArgs(
+BindArgs _$BindArgsFromJson(Map<String, dynamic> json) {
+  return BindArgs(
       channelName: json['channelName'] as String,
       eventName: json['eventName'] as String);
 }
 
-Map<String, dynamic> _$_BindArgsToJson(_BindArgs instance) => <String, dynamic>{
+Map<String, dynamic> _$BindArgsToJson(BindArgs instance) => <String, dynamic>{
       'channelName': instance.channelName,
       'eventName': instance.eventName
     };

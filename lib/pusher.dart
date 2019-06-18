@@ -4,6 +4,7 @@ import 'dart:convert';
 
 part 'pusher.g.dart';
 
+/// Used to listen to events sent through pusher
 class Pusher {
   Pusher._();
 
@@ -25,7 +26,7 @@ class Pusher {
     _eventChannel.receiveBroadcastStream().listen(_handleEvent);
 
     final initArgs = jsonEncode(
-        _InitArgs(appKey, options, isLoggingEnabled: enableLogging).toJson());
+        InitArgs(appKey, options, isLoggingEnabled: enableLogging).toJson());
     await _channel.invokeMethod('init', initArgs);
   }
 
@@ -58,14 +59,14 @@ class Pusher {
   static Future _bind(String channelName, String eventName,
       {Function(Event) onEvent}) async {
     final bindArgs = jsonEncode(
-        _BindArgs(channelName: channelName, eventName: eventName).toJson());
+        BindArgs(channelName: channelName, eventName: eventName).toJson());
     eventCallbacks[channelName + eventName] = onEvent;
     await _channel.invokeMethod('bind', bindArgs);
   }
 
   static Future _unbind(String channelName, String eventName) async {
     final bindArgs = jsonEncode(
-        _BindArgs(channelName: channelName, eventName: eventName).toJson());
+        BindArgs(channelName: channelName, eventName: eventName).toJson());
     eventCallbacks.remove(channelName + eventName);
     await _channel.invokeMethod('unbind', bindArgs);
   }
@@ -98,30 +99,30 @@ class Pusher {
 }
 
 @JsonSerializable()
-class _InitArgs {
+class InitArgs {
   String appKey;
   PusherOptions options;
   bool isLoggingEnabled;
 
-  _InitArgs(this.appKey, this.options, {this.isLoggingEnabled = false});
+  InitArgs(this.appKey, this.options, {this.isLoggingEnabled = false});
 
-  factory _InitArgs.fromJson(Map<String, dynamic> json) =>
-      _$_InitArgsFromJson(json);
+  factory InitArgs.fromJson(Map<String, dynamic> json) =>
+      _$InitArgsFromJson(json);
 
-  Map<String, dynamic> toJson() => _$_InitArgsToJson(this);
+  Map<String, dynamic> toJson() => _$InitArgsToJson(this);
 }
 
 @JsonSerializable()
-class _BindArgs {
+class BindArgs {
   String channelName;
   String eventName;
 
-  _BindArgs({this.channelName, this.eventName});
+  BindArgs({this.channelName, this.eventName});
 
-  factory _BindArgs.fromJson(Map<String, dynamic> json) =>
-      _$_BindArgsFromJson(json);
+  factory BindArgs.fromJson(Map<String, dynamic> json) =>
+      _$BindArgsFromJson(json);
 
-  Map<String, dynamic> toJson() => _$_BindArgsToJson(this);
+  Map<String, dynamic> toJson() => _$BindArgsToJson(this);
 }
 
 @JsonSerializable()
