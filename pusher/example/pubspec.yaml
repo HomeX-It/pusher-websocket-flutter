@@ -17,7 +17,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  pusher:
+  pusher_websocket_flutter:
     path: ../
 
 # For information on the generic Dart part of this file, see the

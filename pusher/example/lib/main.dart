@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:pusher/pusher.dart';
+import 'package:pusher_websocket_flutter/pusher.dart';
 
 void main() => runApp(MyApp());
 

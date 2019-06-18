@@ -81,7 +81,7 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.5.0"
-  pusher:
+  pusher_websocket_flutter:
     dependency: "direct dev"
     description:
       path: ".."
