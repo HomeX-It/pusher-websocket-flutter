@@ -93,8 +93,8 @@ class _MyAppState extends State<MyApp> {
                     RaisedButton(
                       child: Text("Unsubscribe"),
                       onPressed: () async {
-                        channel =
-                            await Pusher.unsubscribe(channelController.text);
+                        await Pusher.unsubscribe(channelController.text);
+                        channel = null;
                       },
                     )
                   ],
