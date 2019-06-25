@@ -125,6 +125,7 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
             
             let channel = channels[bindArgs.channelName]
             if let channelObj = channel {
+                unbindIfBound(channelName: bindArgs.channelName, eventName: bindArgs.eventName)
                 bindedEvents[bindArgs.channelName + bindArgs.eventName] = channelObj.bind(eventName: bindArgs.eventName, callback: { data in
                     do {
                         if let dataObj = data as? [String : AnyObject] {
@@ -166,26 +167,28 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
             let json = call.arguments as! String
             let jsonDecoder = JSONDecoder()
             let bindArgs = try jsonDecoder.decode(BindArgs.self, from: json.data(using: .utf8)!)
-            
-            let channel = channels[bindArgs.channelName]
-            if let channelObj = channel {
-                let callbackId = bindedEvents[bindArgs.channelName + bindArgs.eventName]
-                if let callbackIdObj = callbackId {
-                    channelObj.unbind(eventName: bindArgs.channelName, callbackId: callbackIdObj)
-                    bindedEvents.removeValue(forKey: bindArgs.channelName + bindArgs.eventName)
-                    
-                    if (isLoggingEnabled) {
-                        print("Pusher unbind")
-                    }
-                }
-            }
-            
+            unbindIfBound(channelName: bindArgs.channelName, eventName: bindArgs.eventName)
         } catch {
             if (isLoggingEnabled) {
                 print("Pusher unbind error:" + error.localizedDescription)
             }
         }
         result(nil);
+    }
+    
+    private func unbindIfBound(channelName: String, eventName: String) {
+        let channel = channels[channelName]
+        if let channelObj = channel {
+            let callbackId = bindedEvents[channelName + eventName]
+            if let callbackIdObj = callbackId {
+                channelObj.unbind(eventName: eventName, callbackId: callbackIdObj)
+                bindedEvents.removeValue(forKey: channelName + eventName)
+                
+                if (isLoggingEnabled) {
+                    print("Pusher unbind")
+                }
+            }
+        }
     }
     
     public func changedConnectionState(from old: ConnectionState, to new: ConnectionState) {

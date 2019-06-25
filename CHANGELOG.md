@@ -1,3 +1,7 @@
+## 0.0.4
+
+Fixed calling `bind` multiple times with the same event name resulting in duplicate callbacks on iOS
+
 ## 0.0.3
 
 Added return type of `void` for bind callback
