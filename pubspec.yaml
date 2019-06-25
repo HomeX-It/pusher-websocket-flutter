@@ -1,6 +1,6 @@
 name: pusher_websocket_flutter
 description: A Flutter plugin to listen to events sent through pusher. Wraps the native Java and Swift libraries
-version: 0.0.2
+version: 0.0.3
 author: HomeX Mobile Team <mobile@homex.com>
 homepage: https://github.com/HomeXLabs/pusher-websocket-flutter
 

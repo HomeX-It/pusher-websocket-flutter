@@ -1,3 +1,7 @@
+## 0.0.3
+
+Added return type of `void` for bind callback
+
 ## 0.0.2
 
 Small fixes for pub listing

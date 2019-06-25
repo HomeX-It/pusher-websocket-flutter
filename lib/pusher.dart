@@ -57,7 +57,7 @@ class Pusher {
   }
 
   static Future _bind(String channelName, String eventName,
-      {Function(Event) onEvent}) async {
+      {void Function(Event) onEvent}) async {
     final bindArgs = jsonEncode(
         BindArgs(channelName: channelName, eventName: eventName).toJson());
     eventCallbacks[channelName + eventName] = onEvent;
@@ -183,7 +183,7 @@ class Channel {
   Channel({this.name});
 
   /// Bind to listen for events sent on the given channel
-  Future bind(String eventName, Function(Event) onEvent) async {
+  Future bind(String eventName, void Function(Event) onEvent) async {
     await Pusher._bind(name, eventName, onEvent: onEvent);
   }
 
