@@ -24,23 +24,22 @@ import io.flutter.plugin.common.PluginRegistry.Registrar;
 
 /** PusherPlugin */
 public class PusherPlugin implements MethodCallHandler {
+  static String TAG = "PusherPlugin";
 
-  private Pusher pusher;
-  private Map<String, Channel> channels = new HashMap<>();
-
+  private static Pusher pusher;
+  private static Map<String, Channel> channels = new HashMap<>();
   private static EventListener eventListener;
 
   static EventChannel.EventSink eventSinks;
-  static String TAG = "PusherPlugin";
   static boolean isLoggingEnabled = false;
 
   /** Plugin registration. */
   public static void registerWith(Registrar registrar) {
     final MethodChannel channel = new MethodChannel(registrar.messenger(), "pusher");
-    channel.setMethodCallHandler(new PusherPlugin());
-
-    eventListener = new EventListener();
     EventChannel eventStream = new EventChannel(registrar.messenger(), "pusherStream");
+    eventListener = new EventListener();
+
+    channel.setMethodCallHandler(new PusherPlugin());
     eventStream.setStreamHandler(new EventChannel.StreamHandler() {
       @Override
       public void onListen(Object args, final EventChannel.EventSink events) {
@@ -84,6 +83,13 @@ public class PusherPlugin implements MethodCallHandler {
   }
 
   private void init(MethodCall call, Result result) {
+    if (pusher != null) {
+      for (Map.Entry<String, Channel> entry : channels.entrySet()) {
+        String name = entry.getKey();
+        pusher.unsubscribe(name);
+      }
+    }
+
     try {
       JSONObject json = new JSONObject(call.arguments.toString());
       JSONObject options  = json.getJSONObject("options");
