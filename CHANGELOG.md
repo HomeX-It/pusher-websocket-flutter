@@ -1,3 +1,7 @@
+## 0.0.5
+
+Fixed hot restart resulting in duplicate callbacks
+
 ## 0.0.4
 
 Fixed calling `bind` multiple times with the same event name resulting in duplicate callbacks on iOS
