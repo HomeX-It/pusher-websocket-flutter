@@ -1,3 +1,7 @@
+## 0.0.6
+
+Setting iOS pod as a static framework
+
 ## 0.0.5
 
 Fixed hot restart resulting in duplicate callbacks
