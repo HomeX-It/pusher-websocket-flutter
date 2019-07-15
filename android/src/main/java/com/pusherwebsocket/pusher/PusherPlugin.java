@@ -146,25 +146,30 @@ public class PusherPlugin implements MethodCallHandler {
       }
 
       @Override
-      public void onError(String message, String code, Exception ex) {
-        try {
-          String exMessage = null;
-          if (ex != null)
-            exMessage = ex.getMessage();
+      public void onError(final String message, final String code, final Exception ex) {
+          new Handler(Looper.getMainLooper()).post(new Runnable() {
+              @Override
+              public void run() {
+                  try {
+                      String exMessage = null;
+                      if (ex != null)
+                          exMessage = ex.getMessage();
 
-          JSONObject eventStreamMessageJson = new JSONObject();
-          JSONObject connectionErrorJson = new JSONObject();
-          connectionErrorJson.put("message", message);
-          connectionErrorJson.put("code", code);
-          connectionErrorJson.put("exception", exMessage);
-          eventStreamMessageJson.put("connectionError", connectionErrorJson);
-          eventSinks.success(eventStreamMessageJson.toString());
-        } catch (Exception e) {
-          if (isLoggingEnabled) {
-            Log.d(TAG, "onError error: " + e.getMessage());
-            e.printStackTrace();
-          }
-        }
+                      JSONObject eventStreamMessageJson = new JSONObject();
+                      JSONObject connectionErrorJson = new JSONObject();
+                      connectionErrorJson.put("message", message);
+                      connectionErrorJson.put("code", code);
+                      connectionErrorJson.put("exception", exMessage);
+                      eventStreamMessageJson.put("connectionError", connectionErrorJson);
+                      eventSinks.success(eventStreamMessageJson.toString());
+                  } catch (Exception e) {
+                      if (isLoggingEnabled) {
+                          Log.d(TAG, "onError error: " + e.getMessage());
+                          e.printStackTrace();
+                      }
+                  }
+              }
+          });
       }
     }, ConnectionState.ALL);
 
