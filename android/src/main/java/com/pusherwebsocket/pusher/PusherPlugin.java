@@ -1,5 +1,7 @@
 package com.pusherwebsocket.pusher;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import com.pusher.client.Pusher;
@@ -122,20 +124,25 @@ public class PusherPlugin implements MethodCallHandler {
   private void connect(MethodCall call, Result result) {
     pusher.connect(new ConnectionEventListener() {
       @Override
-      public void onConnectionStateChange(ConnectionStateChange change) {
-        try {
-          JSONObject eventStreamMessageJson = new JSONObject();
-          JSONObject connectionStateChangeJson = new JSONObject();
-          connectionStateChangeJson.put("currentState", change.getCurrentState().toString());
-          connectionStateChangeJson.put("previousState", change.getPreviousState().toString());
-          eventStreamMessageJson.put("connectionStateChange", connectionStateChangeJson);
-          eventSinks.success(eventStreamMessageJson.toString());
-        } catch (Exception e) {
-          if (isLoggingEnabled) {
-            Log.d(TAG, "onConnectionStateChange error: " + e.getMessage());
-            e.printStackTrace();
-          }
-        }
+      public void onConnectionStateChange(final ConnectionStateChange change) {
+          new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+              try {
+                JSONObject eventStreamMessageJson = new JSONObject();
+                JSONObject connectionStateChangeJson = new JSONObject();
+                connectionStateChangeJson.put("currentState", change.getCurrentState().toString());
+                connectionStateChangeJson.put("previousState", change.getPreviousState().toString());
+                eventStreamMessageJson.put("connectionStateChange", connectionStateChangeJson);
+                eventSinks.success(eventStreamMessageJson.toString());
+              } catch (Exception e) {
+                if (isLoggingEnabled) {
+                  Log.d(TAG, "onConnectionStateChange error: " + e.getMessage());
+                  e.printStackTrace();
+                }
+              }
+            }
+          });
       }
 
       @Override
@@ -240,25 +247,30 @@ public class PusherPlugin implements MethodCallHandler {
 class EventListener implements SubscriptionEventListener {
 
   @Override
-  public void onEvent(String channelName, String eventName, String data) {
-    try {
-      JSONObject eventStreamMessageJson = new JSONObject();
-      JSONObject eventJson = new JSONObject();
-      eventJson.put("channel", channelName);
-      eventJson.put("event", eventName);
-      eventJson.put("data", data);
-      eventStreamMessageJson.put("event", eventJson);
-      String eventStreamMessageJsonString = eventStreamMessageJson.toString();
-      PusherPlugin.eventSinks.success(eventStreamMessageJsonString);
-      if (PusherPlugin.isLoggingEnabled) {
-        Log.d(PusherPlugin.TAG, "Pusher event: CH:" + channelName + " EN:" + eventName + " ED:" + eventStreamMessageJsonString);
+  public void onEvent(final String channelName, final String eventName, final String data) {
+    new Handler(Looper.getMainLooper()).post(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          JSONObject eventStreamMessageJson = new JSONObject();
+          JSONObject eventJson = new JSONObject();
+          eventJson.put("channel", channelName);
+          eventJson.put("event", eventName);
+          eventJson.put("data", data);
+          eventStreamMessageJson.put("event", eventJson);
+          String eventStreamMessageJsonString = eventStreamMessageJson.toString();
+          PusherPlugin.eventSinks.success(eventStreamMessageJsonString);
+          if (PusherPlugin.isLoggingEnabled) {
+            Log.d(PusherPlugin.TAG, "Pusher event: CH:" + channelName + " EN:" + eventName + " ED:" + eventStreamMessageJsonString);
+          }
+        } catch (Exception e) {
+          if (PusherPlugin.isLoggingEnabled) {
+            Log.d(PusherPlugin.TAG, "onEvent error: " + e.getMessage());
+            e.printStackTrace();
+          }
+        }
       }
-    } catch (Exception e) {
-      if (PusherPlugin.isLoggingEnabled) {
-        Log.d(PusherPlugin.TAG, "onEvent error: " + e.getMessage());
-        e.printStackTrace();
-      }
-    }
+    });
   }
 }
 
