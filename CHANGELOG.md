@@ -1,3 +1,7 @@
+## 0.0.7
+
+Run Android callbacks on main thread
+
 ## 0.0.6
 
 Setting iOS pod as a static framework
