@@ -1,7 +1,7 @@
 PODS:
   - CryptoSwift (0.15.0)
   - Flutter (1.0.0)
-  - pusher_websocket_flutter (0.0.1):
+  - pusher_websocket_flutter (0.0.6):
     - Flutter
     - PusherSwift (= 7.0.0)
   - PusherSwift (7.0.0):
@@ -30,12 +30,12 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   CryptoSwift: 769f58a9e89f64e8796c2e59ce5f002dc81a2438
-  Flutter: 9d0fac939486c9aba2809b7982dfdbb47a7b0296
-  pusher_websocket_flutter: 5254c249344fc047b2d5b814ad062da5f853d389
+  Flutter: 58dd7d1b27887414a370fcccb9e645c08ffd7a6a
+  pusher_websocket_flutter: 8e0ad2c68a61137336be6d94b39e72eddcb4eacc
   PusherSwift: d15d6290be0b0b57fd9ac80b03661a6ba24623ec
   ReachabilitySwift: 408477d1b6ed9779dba301953171e017c31241f3
   Starscream: ef3ece99d765eeccb67de105bfa143f929026cf5
 
 PODFILE CHECKSUM: d231b65d6bea6d24555f84ca7901720538b5791f
 
-COCOAPODS: 1.5.3
+COCOAPODS: 1.7.2
