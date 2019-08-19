@@ -18,22 +18,30 @@ class Pusher {
       Map<String, void Function(Event)>();
 
   /// Setup app key and options
-  static Future init(String appKey, PusherOptions options,
-      {bool enableLogging = false}) async {
+  static Future init(
+    String appKey,
+    PusherOptions options, {
+    bool enableLogging = false,
+  }) async {
     assert(appKey != null);
     assert(options != null);
 
     _eventChannel.receiveBroadcastStream().listen(_handleEvent);
 
-    final initArgs = jsonEncode(
-        InitArgs(appKey, options, isLoggingEnabled: enableLogging).toJson());
+    final initArgs = jsonEncode(InitArgs(
+      appKey,
+      options,
+      isLoggingEnabled: enableLogging,
+    ).toJson());
+
     await _channel.invokeMethod('init', initArgs);
   }
 
   /// Connect the client to pusher
-  static Future connect(
-      {void Function(ConnectionStateChange) onConnectionStateChange,
-      void Function(ConnectionError) onError}) async {
+  static Future connect({
+    void Function(ConnectionStateChange) onConnectionStateChange,
+    void Function(ConnectionError) onError,
+  }) async {
     _onConnectionStateChange = onConnectionStateChange;
     _onError = onError;
     await _channel.invokeMethod('connect');
@@ -56,17 +64,26 @@ class Pusher {
     await _channel.invokeMethod('unsubscribe', channelName);
   }
 
-  static Future _bind(String channelName, String eventName,
-      {void Function(Event) onEvent}) async {
-    final bindArgs = jsonEncode(
-        BindArgs(channelName: channelName, eventName: eventName).toJson());
+  static Future _bind(
+    String channelName,
+    String eventName, {
+    void Function(Event) onEvent,
+  }) async {
+    final bindArgs = jsonEncode(BindArgs(
+      channelName: channelName,
+      eventName: eventName,
+    ).toJson());
+
     eventCallbacks[channelName + eventName] = onEvent;
     await _channel.invokeMethod('bind', bindArgs);
   }
 
   static Future _unbind(String channelName, String eventName) async {
-    final bindArgs = jsonEncode(
-        BindArgs(channelName: channelName, eventName: eventName).toJson());
+    final bindArgs = jsonEncode(BindArgs(
+      channelName: channelName,
+      eventName: eventName,
+    ).toJson());
+
     eventCallbacks.remove(channelName + eventName);
     await _channel.invokeMethod('unbind', bindArgs);
   }
@@ -79,8 +96,7 @@ class Pusher {
     var message = PusherEventStreamMessage.fromJson(jsonDecode(arguments));
 
     if (message.isEvent) {
-      var callback =
-          eventCallbacks[message.event.channel + message.event.event];
+      var callback = eventCallbacks[message.event.channel + message.event.event];
       if (callback != null) {
         callback(message.event);
       } else {
@@ -128,8 +144,24 @@ class BindArgs {
 @JsonSerializable()
 class PusherOptions {
   String cluster;
+  String host;
+  int port;
+  bool encrypted;
+  String authEndpoint;
+  Map<String, String> authHeaders;
+  bool autoReconnect;
+  double activityTimeout;
 
-  PusherOptions({this.cluster});
+  PusherOptions({
+    this.cluster,
+    this.host,
+    this.port,
+    this.encrypted,
+    this.authEndpoint,
+    this.authHeaders,
+    this.autoReconnect,
+    this.activityTimeout,
+  });
 
   factory PusherOptions.fromJson(Map<String, dynamic> json) =>
       _$PusherOptionsFromJson(json);
