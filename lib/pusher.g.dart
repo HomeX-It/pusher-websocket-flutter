@@ -33,11 +33,30 @@ Map<String, dynamic> _$BindArgsToJson(BindArgs instance) => <String, dynamic>{
     };
 
 PusherOptions _$PusherOptionsFromJson(Map<String, dynamic> json) {
-  return PusherOptions(cluster: json['cluster'] as String);
+  return PusherOptions(
+      cluster: json['cluster'] as String,
+      host: json['host'] as String,
+      port: json['port'] as int,
+      encrypted: json['encrypted'] as bool,
+      authEndpoint: json['authEndpoint'] as String,
+      authHeaders: (json['authHeaders'] as Map<String, dynamic>)?.map(
+        (k, e) => MapEntry(k, e as String),
+      ),
+      autoReconnect: json['autoReconnect'] as bool,
+      activityTimeout: (json['activityTimeout'] as num)?.toDouble());
 }
 
 Map<String, dynamic> _$PusherOptionsToJson(PusherOptions instance) =>
-    <String, dynamic>{'cluster': instance.cluster};
+    <String, dynamic>{
+      'cluster': instance.cluster,
+      'host': instance.host,
+      'port': instance.port,
+      'encrypted': instance.encrypted,
+      'authEndpoint': instance.authEndpoint,
+      'authHeaders': instance.authHeaders,
+      'autoReconnect': instance.autoReconnect,
+      'activityTimeout': instance.activityTimeout
+    };
 
 ConnectionStateChange _$ConnectionStateChangeFromJson(
     Map<String, dynamic> json) {
