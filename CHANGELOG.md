@@ -1,3 +1,7 @@
+## 0.0.8
+
+Update json_annotation and json_serializable
+
 ## 0.0.7
 
 Run Android callbacks on main thread
