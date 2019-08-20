@@ -42,8 +42,7 @@ PusherOptions _$PusherOptionsFromJson(Map<String, dynamic> json) {
       authHeaders: (json['authHeaders'] as Map<String, dynamic>)?.map(
         (k, e) => MapEntry(k, e as String),
       ),
-      autoReconnect: json['autoReconnect'] as bool,
-      activityTimeout: (json['activityTimeout'] as num)?.toDouble());
+      activityTimeout: json['activityTimeout'] as int);
 }
 
 Map<String, dynamic> _$PusherOptionsToJson(PusherOptions instance) =>
@@ -54,7 +53,6 @@ Map<String, dynamic> _$PusherOptionsToJson(PusherOptions instance) =>
       'encrypted': instance.encrypted,
       'authEndpoint': instance.authEndpoint,
       'authHeaders': instance.authHeaders,
-      'autoReconnect': instance.autoReconnect,
       'activityTimeout': instance.activityTimeout
     };
 

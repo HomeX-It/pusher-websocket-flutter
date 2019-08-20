@@ -25,7 +25,7 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> initPusher() async {
     try {
-      await Pusher.init("bb4746e02303a113a6c1", PusherOptions(cluster: "eu"), enableLogging: true);
+      await Pusher.init("APP_KEY", PusherOptions(cluster: "us2"), enableLogging: true);
     } on PlatformException catch (e) {
       print(e.message);
     }
