@@ -149,8 +149,7 @@ class PusherOptions {
   bool encrypted;
   String authEndpoint;
   Map<String, String> authHeaders;
-  bool autoReconnect;
-  double activityTimeout;
+  int activityTimeout;
 
   PusherOptions({
     this.cluster,
@@ -159,7 +158,6 @@ class PusherOptions {
     this.encrypted,
     this.authEndpoint,
     this.authHeaders,
-    this.autoReconnect,
     this.activityTimeout,
   });
 
