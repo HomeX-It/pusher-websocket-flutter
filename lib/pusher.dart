@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'dart:convert';
@@ -96,7 +97,8 @@ class Pusher {
     var message = PusherEventStreamMessage.fromJson(jsonDecode(arguments));
 
     if (message.isEvent) {
-      var callback = eventCallbacks[message.event.channel + message.event.event];
+      var callback =
+          eventCallbacks[message.event.channel + message.event.event];
       if (callback != null) {
         callback(message.event);
       } else {
@@ -143,28 +145,42 @@ class BindArgs {
 
 @JsonSerializable()
 class PusherOptions {
+  PusherAuth pusherAuth;
   String cluster;
   String host;
   int port;
   bool encrypted;
-  String authEndpoint;
-  Map<String, String> authHeaders;
   int activityTimeout;
 
   PusherOptions({
-    this.cluster,
-    this.host,
-    this.port,
-    this.encrypted,
-    this.authEndpoint,
-    this.authHeaders,
-    this.activityTimeout,
+    this.pusherAuth,
+    this.cluster, // eg. eu, us2, ...
+    this.host, // default: "ws.pusherapp.com", with cluster: "ws-eu.pusherapp.com"
+    this.port = 443,
+    this.encrypted = true,
+    this.activityTimeout = 30000,
   });
 
   factory PusherOptions.fromJson(Map<String, dynamic> json) =>
       _$PusherOptionsFromJson(json);
 
   Map<String, dynamic> toJson() => _$PusherOptionsToJson(this);
+}
+
+@JsonSerializable()
+class PusherAuth {
+  String endpoint;
+  Map<String, String> headers;
+
+  PusherAuth({
+    @required this.endpoint, // eg. https://api.example.com/broadcating/auth
+    this.headers = const {'Content-Type': 'application/json'},
+  });
+
+  factory PusherAuth.fromJson(Map<String, dynamic> json) =>
+      _$PusherAuthFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PusherAuthToJson(this);
 }
 
 @JsonSerializable()

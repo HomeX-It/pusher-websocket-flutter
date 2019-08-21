@@ -13,6 +13,7 @@ import com.pusher.client.channel.Channel;
 import com.pusher.client.channel.ChannelEventListener;
 import com.pusher.client.channel.PresenceChannelEventListener;
 import com.pusher.client.channel.PrivateChannelEventListener;
+import com.pusher.client.channel.PusherEvent;
 import com.pusher.client.channel.User;
 import com.pusher.client.connection.ConnectionEventListener;
 import com.pusher.client.connection.ConnectionState;
@@ -26,7 +27,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
@@ -352,42 +352,27 @@ public class PusherPlugin implements MethodCallHandler {
             }
         }
     }
-}
 
-class EventChannelListener implements ChannelEventListener {
+    public static PusherEvent toPusherEvent(String channel, String event){
+        Map<String, Object> eventData = new HashMap<>();
 
-    @Override
-    public void onEvent(final String channelName, final String eventName, final String data) {
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    JSONObject eventStreamMessageJson = new JSONObject();
-                    JSONObject eventJson = new JSONObject();
-                    eventJson.put("channel", channelName);
-                    eventJson.put("event", eventName);
-                    eventJson.put("data", data);
-                    eventStreamMessageJson.put("event", eventJson);
-                    String eventStreamMessageJsonString = eventStreamMessageJson.toString();
-                    PusherPlugin.eventSinks.success(eventStreamMessageJsonString);
-                    if (PusherPlugin.isLoggingEnabled) {
-                        Log.d(PusherPlugin.TAG, "Pusher event: CH:" + channelName + " EN:" + eventName + " ED:" + eventStreamMessageJsonString);
-                    }
-                } catch (Exception e) {
-                    if (PusherPlugin.isLoggingEnabled) {
-                        Log.d(PusherPlugin.TAG, "onEvent error: " + e.getMessage());
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
+        eventData.put("channel", channel);
+        eventData.put("event", event);
+        eventData.put("data", "");
+
+        return new PusherEvent(eventData);
     }
 
-    @Override
-    public void onSubscriptionSucceeded(String channelName) {
-        Log.d(PusherPlugin.TAG, (
-                String.format("onSubscriptionSucceeded [%s]", channelName)
-        ));
+    public static PusherEvent toPusherEvent(String channel, String event, String userId){
+        Map<String, Object> eventData = new HashMap<>();
+
+            eventData.put("user_id", userId);
+            eventData.put("channel", channel);
+            eventData.put("event", event);
+            eventData.put("data", "");
+
+
+        return new PusherEvent(eventData);
     }
 }
 
@@ -420,43 +405,77 @@ class JsonEncodedConnectionFactory extends ConnectionFactory {
     }
 }
 
+class EventChannelListener implements ChannelEventListener {
+    static final String SUBSCRIPTION_SUCCESS_EVENT = "pusher_internal:subscription_succeeded";
+    static final String MEMBER_ADDED_EVENT = "pusher_internal:member_added";
+    static final String MEMBER_REMOVED_EVENT = "pusher_internal:member_removed";
+
+    @Override
+    public void onEvent(final PusherEvent pusherEvent) {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    JSONObject eventStreamMessageJson = new JSONObject();
+                    JSONObject eventJson = new JSONObject();
+                    eventJson.put("channel", pusherEvent.getChannelName());
+                    eventJson.put("event", pusherEvent.getEventName());
+                    eventJson.put("data", pusherEvent.getData());
+                    eventStreamMessageJson.put("event", eventJson);
+                    String eventStreamMessageJsonString = eventStreamMessageJson.toString();
+
+                    PusherPlugin.eventSinks.success(eventStreamMessageJsonString);
+
+                    if (PusherPlugin.isLoggingEnabled) {
+                        Log.d(PusherPlugin.TAG, "Pusher event: CH:" + pusherEvent.getChannelName() + " EN:" + pusherEvent.getEventName() + " ED:" + eventStreamMessageJsonString);
+                    }
+                } catch (Exception e) {
+                   onError(e);
+                }
+            }
+        });
+    }
+
+    void onError(Exception e){
+        PusherPlugin.eventSinks.error("Pusher event error", e.getMessage(), e);
+
+        if (PusherPlugin.isLoggingEnabled) {
+            Log.d(PusherPlugin.TAG, "Pusher event error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onSubscriptionSucceeded(String channelName) {
+        this.onEvent(PusherPlugin.toPusherEvent(channelName, SUBSCRIPTION_SUCCESS_EVENT));
+    }
+}
+
 class PresenceChannelChannelListener extends EventChannelListener implements PresenceChannelEventListener {
 
     @Override
     public void onSubscriptionSucceeded(String channelName) {
-        Log.d(PusherPlugin.TAG, (
-                String.format("onSubscriptionSucceeded [%s]", channelName)
-        ));
+        this.onEvent(PusherPlugin.toPusherEvent(channelName, SUBSCRIPTION_SUCCESS_EVENT));
     }
 
     @Override
     public void onAuthenticationFailure(String message, Exception e) {
-        Log.d(PusherPlugin.TAG, (
-                String.format("onAuthenticationFailure [%s]", message)
-        ));
+        // TODO
     }
 
     @Override
     public void onUsersInformationReceived(String channelName, Set<User> users) {
-        Log.d(PusherPlugin.TAG, (
-                String.format("onUsersInformationReceived [%s]", channelName)
-        ));
+        this.onEvent(PusherPlugin.toPusherEvent(channelName, SUBSCRIPTION_SUCCESS_EVENT));
     }
 
     @Override
     public void userSubscribed(String channelName, User user) {
-        Log.d(PusherPlugin.TAG, (
-                String.format("A new user joined channel [%s]: %s, %s",
-                        channelName, user.getId(), user.getInfo())
-        ));
+        this.onEvent(PusherPlugin.toPusherEvent(channelName, MEMBER_ADDED_EVENT));
     }
 
     @Override
     public void userUnsubscribed(String channelName, User user) {
-        Log.d(PusherPlugin.TAG, (
-                String.format("A user left channel [%s]: %s %s",
-                        channelName, user.getId(), user.getInfo())
-        ));
+        this.onEvent(PusherPlugin.toPusherEvent(channelName, MEMBER_REMOVED_EVENT));
     }
 }
 
@@ -464,16 +483,12 @@ class PrivateChannelChannelListener extends EventChannelListener implements Priv
 
     @Override
     public void onSubscriptionSucceeded(String channelName) {
-        Log.d(PusherPlugin.TAG, (
-                String.format("onSubscriptionSucceeded [%s]", channelName)
-        ));
+        this.onEvent(PusherPlugin.toPusherEvent(channelName, SUBSCRIPTION_SUCCESS_EVENT));
     }
 
     @Override
     public void onAuthenticationFailure(String message, Exception e) {
-        Log.d(PusherPlugin.TAG, (
-                String.format("Authentication failure due to [%s], exception was [%s]", message, e)
-        ));
+       // TODO
     }
 
 }
