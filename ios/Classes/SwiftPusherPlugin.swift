@@ -61,7 +61,7 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
             SwiftPusherPlugin.isLoggingEnabled = initArgs.isLoggingEnabled
             
             let options = PusherClientOptions(
-                authMethod: (initArgs.options.authEndpoint != nil && initArgs.options.authHeaders != nil) ? AuthMethod.authRequestBuilder(authRequestBuilder: AuthRequestBuilder(authEndpoint: initArgs.options.authEndpoint!, authHeaders: initArgs.options.authHeaders!)): .noMethod,
+                authMethod: initArgs.options.auth != nil ? AuthMethod.authRequestBuilder(authRequestBuilder: AuthRequestBuilder(endpoint: initArgs.options.auth!.endpoint, headers: initArgs.options.auth!.headers)): .noMethod,
                 host: initArgs.options.host != nil ? .host(initArgs.options.host!) : (initArgs.options.cluster != nil ? .cluster(initArgs.options.cluster!) : .host("ws.pusherapp.com")),
                 port: initArgs.options.port ?? (initArgs.options.encrypted ?? true ? 443 : 80),
                 encrypted: initArgs.options.encrypted ?? true,
@@ -253,30 +253,33 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
 }
 
 class AuthRequestBuilder: AuthRequestBuilderProtocol {
-    var authEndpoint: String
-    var authHeaders: [String: String]
+    var endpoint: String
+    var headers: [String: String]
     
-    init(authEndpoint: String, authHeaders: [String: String]) {
-        self.authEndpoint = authEndpoint
-        self.authHeaders = authHeaders
+    init(endpoint: String, headers: [String: String]) {
+        self.endpoint = endpoint
+        self.headers = headers
     }
     
     func requestFor(socketID: String, channelName: String) -> URLRequest? {
         do{
-            let payload: [String: String] = ["socket_id": socketID, "channel_name": channelName]
-            let jsonEncoder = JSONEncoder()
-            let jsonData = try jsonEncoder.encode(payload)
-            
-            var request = URLRequest(url: URL(string: authEndpoint)!)
+            var request = URLRequest(url: URL(string: endpoint)!)
             request.httpMethod = "POST"
-            request.httpBody = jsonData
-            for (key, value) in authHeaders {
+            
+            if(headers.values.contains("application/json")){
+                let jsonEncoder = JSONEncoder()
+                request.httpBody = try jsonEncoder.encode(["socket_id": socketID, "channel_name": channelName])
+            }else{
+                request.httpBody = "socket_id=\(socketID)&channel_name=\(channelName)".data(using: String.Encoding.utf8)
+            }
+            
+            for (key, value) in headers {
                 request.addValue(value, forHTTPHeaderField: key)
             }
             return request
         }catch {
             if (SwiftPusherPlugin.isLoggingEnabled) {
-                print("Authenticatione error:" + error.localizedDescription)
+                print("Authentication error:" + error.localizedDescription)
             }
             return nil
         }
@@ -306,9 +309,13 @@ struct Options: Codable {
     var host: String?
     var port: Int?
     var encrypted: Bool?
-    var authEndpoint: String?
-    var authHeaders: [String: String]?
+    var auth: Auth?
     var activityTimeout: Int?
+}
+
+struct Auth: Codable{
+    var endpoint: String
+    var headers: [String: String]
 }
 
 struct PusherEventStreamMessage: Codable {
