@@ -7,6 +7,7 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.google.gson.reflect.TypeToken;
 import com.pusher.client.Pusher;
 import com.pusher.client.PusherOptions;
 import com.pusher.client.channel.Channel;
@@ -20,9 +21,11 @@ import com.pusher.client.connection.ConnectionState;
 import com.pusher.client.connection.ConnectionStateChange;
 import com.pusher.client.util.ConnectionFactory;
 import com.pusher.client.util.HttpAuthorizer;
+import com.pusher.client.util.UrlEncodedConnectionFactory;
 
 import org.json.JSONObject;
 
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -34,19 +37,20 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
 
+import static com.pusherwebsocket.pusher.PusherPlugin.TAG;
+
 /**
  * PusherPlugin
  */
 public class PusherPlugin implements MethodCallHandler {
-    static String TAG = "PusherPlugin";
-
     private static Pusher pusher;
     private static Map<String, Channel> channels = new HashMap<>();
     private static EventChannelListener eventListener;
     private static PrivateChannelChannelListener eventListenerPrivate;
     private static PresenceChannelEventListener eventListenerPresence;
 
-    static EventChannel.EventSink eventSinks;
+    static String TAG = "PusherPlugin";
+    static EventChannel.EventSink eventSink;
     static boolean isLoggingEnabled = false;
 
     /**
@@ -54,7 +58,8 @@ public class PusherPlugin implements MethodCallHandler {
      */
     public static void registerWith(Registrar registrar) {
         final MethodChannel channel = new MethodChannel(registrar.messenger(), "pusher");
-        EventChannel eventStream = new EventChannel(registrar.messenger(), "pusherStream");
+        final EventChannel eventStream = new EventChannel(registrar.messenger(), "pusherStream");
+
         eventListener = new EventChannelListener();
         eventListenerPrivate = new PrivateChannelChannelListener();
         eventListenerPresence = new PresenceChannelChannelListener();
@@ -62,13 +67,13 @@ public class PusherPlugin implements MethodCallHandler {
         channel.setMethodCallHandler(new PusherPlugin());
         eventStream.setStreamHandler(new EventChannel.StreamHandler() {
             @Override
-            public void onListen(Object args, final EventChannel.EventSink events) {
-                eventSinks = events;
+            public void onListen(Object args, final EventChannel.EventSink eventSink) {
+                PusherPlugin.eventSink = eventSink;
             }
 
             @Override
             public void onCancel(Object args) {
-                Log.d(TAG, String.format("onCancel args: [%s]", args.toString()));
+                Log.d(TAG, String.format("onCancel args: [%s]", args != null ? args.toString() : "null"));
             }
         });
     }
@@ -113,26 +118,28 @@ public class PusherPlugin implements MethodCallHandler {
         }
 
         try {
-            JSONObject json = new JSONObject(call.arguments.toString());
-            JSONObject options = json.getJSONObject("options");
+            final JSONObject json = new JSONObject(call.arguments.toString());
+            final JSONObject options = json.getJSONObject("options");
 
             if (json.has("isLoggingEnabled")) {
                 isLoggingEnabled = json.getBoolean("isLoggingEnabled");
             }
 
             // setup options
-            PusherOptions pusherOptions = new PusherOptions();
+            final PusherOptions pusherOptions = new PusherOptions();
 
-            if (options.has("authEndpoint") && options.has("authHeaders")) {
-                HttpAuthorizer authorizer = new HttpAuthorizer(options.getString("authEndpoint"), new JsonEncodedConnectionFactory());
-                HashMap<String, String> headers = new Gson().fromJson(options.get("authHeaders").toString(), HashMap.class);
-                authorizer.setHeaders(headers);
+            if (options.has("auth")) {
+                final JSONObject auth = options.getJSONObject("auth");
+                final String endpoint = auth.getString("endpoint");
+                final Type mapType = new TypeToken<Map<String, String>>() {
+                }.getType();
+                final Map<String, String> headers = new Gson().fromJson(auth.get("headers").toString(), mapType);
 
-                pusherOptions.setAuthorizer(authorizer);
+                pusherOptions.setAuthorizer(getAuthorizer(endpoint, headers));
             }
 
             if (options.has("activityTimeout")) {
-                pusherOptions.setActivityTimeout(options.getInt("activityTimeout"));
+                pusherOptions.setPongTimeout(options.getInt("activityTimeout"));
             }
             if (options.has("cluster")) {
                 pusherOptions.setCluster(options.getString("cluster"));
@@ -140,11 +147,10 @@ public class PusherPlugin implements MethodCallHandler {
             if (options.has("host")) {
                 pusherOptions.setHost(options.getString("host"));
             }
-            pusherOptions.setMaxReconnectGapInSeconds(5);
 
             // defaults to encrypted connection on port 443
-            int port = options.has("port") ? options.getInt("port") : 443;
-            boolean encrypted = !options.has("encrypted") || options.getBoolean("encrypted");
+            final int port = options.has("port") ? options.getInt("port") : 443;
+            final boolean encrypted = !options.has("encrypted") || options.getBoolean("encrypted");
 
             if (encrypted) {
                 pusherOptions.setWssPort(port);
@@ -169,6 +175,18 @@ public class PusherPlugin implements MethodCallHandler {
         }
     }
 
+    private static HttpAuthorizer getAuthorizer(String endpoint, Map<String, String> headers) {
+        final ConnectionFactory connection = headers.containsValue("application/json") ?
+                new JsonEncodedConnectionFactory() :
+                new UrlEncodedConnectionFactory();
+
+        final HttpAuthorizer authorizer = new HttpAuthorizer(endpoint, connection);
+        authorizer.setHeaders(headers);
+
+        return authorizer;
+
+    }
+
     private void connect(MethodCall call, Result result) {
         pusher.connect(new ConnectionEventListener() {
             @Override
@@ -177,12 +195,12 @@ public class PusherPlugin implements MethodCallHandler {
                     @Override
                     public void run() {
                         try {
-                            JSONObject eventStreamMessageJson = new JSONObject();
-                            JSONObject connectionStateChangeJson = new JSONObject();
+                            final JSONObject eventStreamMessageJson = new JSONObject();
+                            final JSONObject connectionStateChangeJson = new JSONObject();
                             connectionStateChangeJson.put("currentState", change.getCurrentState().toString());
                             connectionStateChangeJson.put("previousState", change.getPreviousState().toString());
                             eventStreamMessageJson.put("connectionStateChange", connectionStateChangeJson);
-                            eventSinks.success(eventStreamMessageJson.toString());
+                            eventSink.success(eventStreamMessageJson.toString());
                         } catch (Exception e) {
                             if (isLoggingEnabled) {
                                 Log.d(TAG, "onConnectionStateChange error: " + e.getMessage());
@@ -199,31 +217,27 @@ public class PusherPlugin implements MethodCallHandler {
                     @Override
                     public void run() {
                         try {
-                            String exMessage = null;
-                            if (ex != null)
-                                exMessage = ex.getMessage();
+                            final String exMessage = ex != null ? ex.getMessage() : null;
+                            final JSONObject eventStreamMessageJson = new JSONObject();
+                            final JSONObject connectionErrorJson = new JSONObject();
 
-                            JSONObject eventStreamMessageJson = new JSONObject();
-                            JSONObject connectionErrorJson = new JSONObject();
                             connectionErrorJson.put("message", message);
                             connectionErrorJson.put("code", code);
                             connectionErrorJson.put("exception", exMessage);
                             eventStreamMessageJson.put("connectionError", connectionErrorJson);
-                            eventSinks.success(eventStreamMessageJson.toString());
+
+                            eventSink.success(eventStreamMessageJson.toString());
+
                         } catch (Exception e) {
-                            for (Map.Entry<String, Channel> entry : channels.entrySet()) {
-                                String name = entry.getKey();
-                                pusher.unsubscribe(name);
-                                channels.remove(name);
-                            }
                             if (isLoggingEnabled) {
-                                Log.d(TAG, "onError error: " + e.getMessage());
+                                Log.d(TAG, "onError exception: " + e.getMessage());
                                 e.printStackTrace();
                             }
                         }
                     }
                 });
             }
+
         }, ConnectionState.ALL);
 
         if (isLoggingEnabled) {
@@ -241,16 +255,17 @@ public class PusherPlugin implements MethodCallHandler {
     }
 
     private void subscribe(MethodCall call, Result result) {
-        String channelName = call.arguments.toString();
-        if (channels.containsKey(channelName)) {
-            pusher.unsubscribe(channelName);
-            channels.remove(channelName);
+        final String channelName = call.arguments.toString();
+        final String channelType = channelName.split("-")[0];
+        Channel channel = channels.get(channelName);
+
+        if (channel != null && channel.isSubscribed()) {
             if (isLoggingEnabled) {
-                Log.d(TAG, String.format("Was already subscribed, unsubscribing: [%s]", channelName));
+                Log.d(TAG, "Already subscribed, ignoring ...");
             }
+            result.success(null);
+            return;
         }
-        String channelType = channelName.split("-")[0];
-        Channel channel;
 
         switch (channelType) {
             case "private":
@@ -279,9 +294,10 @@ public class PusherPlugin implements MethodCallHandler {
     }
 
     private void unsubscribe(MethodCall call, Result result) {
-        String channelName = call.arguments.toString();
+        final String channelName = call.arguments.toString();
         pusher.unsubscribe(call.arguments.toString());
         channels.remove(channelName);
+
         if (isLoggingEnabled) {
             Log.d(TAG, String.format("unsubscribe ([%s])", channelName));
         }
@@ -290,10 +306,10 @@ public class PusherPlugin implements MethodCallHandler {
 
     private void bind(MethodCall call, Result result) {
         try {
-            JSONObject json = new JSONObject(call.arguments.toString());
-            String channelName = json.getString("channelName");
-            String channelType = channelName.split("-")[0];
-            String eventName = json.getString("eventName");
+            final JSONObject json = new JSONObject(call.arguments.toString());
+            final String channelName = json.getString("channelName");
+            final String channelType = channelName.split("-")[0];
+            final String eventName = json.getString("eventName");
 
             Channel channel = channels.get(channelName);
 
@@ -315,7 +331,7 @@ public class PusherPlugin implements MethodCallHandler {
             result.success(null);
         } catch (Exception e) {
             if (isLoggingEnabled) {
-                Log.d(TAG, "bind error: " + e.getMessage());
+                Log.d(TAG, String.format("bind exception: [%s]", e.getMessage()));
                 e.printStackTrace();
             }
         }
@@ -323,10 +339,10 @@ public class PusherPlugin implements MethodCallHandler {
 
     private void unbind(MethodCall call, Result result) {
         try {
-            JSONObject json = new JSONObject(call.arguments.toString());
-            String channelName = json.getString("channelName");
-            String channelType = channelName.split("-")[0];
-            String eventName = json.getString("eventName");
+            final JSONObject json = new JSONObject(call.arguments.toString());
+            final String channelName = json.getString("channelName");
+            final String channelType = channelName.split("-")[0];
+            final String eventName = json.getString("eventName");
 
             Channel channel = channels.get(channelName);
             switch (channelType) {
@@ -347,41 +363,16 @@ public class PusherPlugin implements MethodCallHandler {
             result.success(null);
         } catch (Exception e) {
             if (isLoggingEnabled) {
-                Log.d(TAG, "unbind error: " + e.getMessage());
+                Log.d(TAG, String.format("unbind exception: [%s]", e.getMessage()));
                 e.printStackTrace();
             }
         }
-    }
-
-    public static PusherEvent toPusherEvent(String channel, String event){
-        Map<String, Object> eventData = new HashMap<>();
-
-        eventData.put("channel", channel);
-        eventData.put("event", event);
-        eventData.put("data", "");
-
-        return new PusherEvent(eventData);
-    }
-
-    public static PusherEvent toPusherEvent(String channel, String event, String userId){
-        Map<String, Object> eventData = new HashMap<>();
-
-            eventData.put("user_id", userId);
-            eventData.put("channel", channel);
-            eventData.put("event", event);
-            eventData.put("data", "");
-
-
-        return new PusherEvent(eventData);
     }
 }
 
 
 class JsonEncodedConnectionFactory extends ConnectionFactory {
 
-    /**
-     * Create a Form URL-encoded factory
-     */
     JsonEncodedConnectionFactory() {
     }
 
@@ -397,7 +388,6 @@ class JsonEncodedConnectionFactory extends ConnectionFactory {
 
     public String getBody() {
         JsonObject payload = new JsonObject();
-        HashMap<String, String> map = new HashMap<>();
         payload.add("channel_name", new JsonPrimitive(getChannelName()));
         payload.add("socket_id", new JsonPrimitive(getSocketId()));
 
@@ -406,9 +396,22 @@ class JsonEncodedConnectionFactory extends ConnectionFactory {
 }
 
 class EventChannelListener implements ChannelEventListener {
-    static final String SUBSCRIPTION_SUCCESS_EVENT = "pusher_internal:subscription_succeeded";
-    static final String MEMBER_ADDED_EVENT = "pusher_internal:member_added";
-    static final String MEMBER_REMOVED_EVENT = "pusher_internal:member_removed";
+    static final String SUBSCRIPTION_SUCCESS_EVENT = "pusher:subscription_succeeded";
+    static final String MEMBER_ADDED_EVENT = "pusher:member_added";
+    static final String MEMBER_REMOVED_EVENT = "pusher:member_removed";
+
+    static PusherEvent toPusherEvent(String channel, String event, String userId, String data) {
+        final Map<String, Object> eventData = new HashMap<>();
+
+        eventData.put("channel", channel);
+        eventData.put("event", event);
+        eventData.put("data", data != null ? data : "");
+        if (userId != null) {
+            eventData.put("user_id", userId);
+        }
+
+        return new PusherEvent(eventData);
+    }
 
     @Override
     public void onEvent(final PusherEvent pusherEvent) {
@@ -416,38 +419,61 @@ class EventChannelListener implements ChannelEventListener {
             @Override
             public void run() {
                 try {
-                    JSONObject eventStreamMessageJson = new JSONObject();
-                    JSONObject eventJson = new JSONObject();
-                    eventJson.put("channel", pusherEvent.getChannelName());
-                    eventJson.put("event", pusherEvent.getEventName());
-                    eventJson.put("data", pusherEvent.getData());
-                    eventStreamMessageJson.put("event", eventJson);
-                    String eventStreamMessageJsonString = eventStreamMessageJson.toString();
+                    final JSONObject eventStreamMessageJson = new JSONObject();
+                    final JSONObject eventJson = new JSONObject();
+                    final String channel = pusherEvent.getChannelName();
+                    final String event = pusherEvent.getEventName();
+                    final String data = pusherEvent.getData();
 
-                    PusherPlugin.eventSinks.success(eventStreamMessageJsonString);
+                    eventJson.put("channel", channel);
+                    eventJson.put("event", event);
+                    eventJson.put("data", data);
+                    eventStreamMessageJson.put("event", eventJson);
+
+                    PusherPlugin.eventSink.success(eventStreamMessageJson.toString());
 
                     if (PusherPlugin.isLoggingEnabled) {
-                        Log.d(PusherPlugin.TAG, "Pusher event: CH:" + pusherEvent.getChannelName() + " EN:" + pusherEvent.getEventName() + " ED:" + eventStreamMessageJsonString);
+                        Log.d(TAG, String.format("onEvent: \nCHANNEL: [%s] \nEVENT: [%s] \nDATA: [%s]", channel, event, data));
                     }
                 } catch (Exception e) {
-                   onError(e);
+                    onError(e);
+                }
+            }
+        });
+
+    }
+
+    void onError(final Exception e) {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    JSONObject eventStreamMessageJson = new JSONObject();
+                    JSONObject connectionErrorJson = new JSONObject();
+                    connectionErrorJson.put("message", e.getMessage());
+                    connectionErrorJson.put("code", "Channel error");
+                    connectionErrorJson.put("exception", e);
+                    eventStreamMessageJson.put("connectionError", connectionErrorJson);
+
+                    PusherPlugin.eventSink.success(eventStreamMessageJson.toString());
+
+                    if (PusherPlugin.isLoggingEnabled) {
+                        Log.d(TAG, "onError : " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                } catch (Exception ex) {
+                    if (PusherPlugin.isLoggingEnabled) {
+                        Log.d(TAG, "onError exception: " + e.getMessage());
+                        ex.printStackTrace();
+                    }
                 }
             }
         });
     }
 
-    void onError(Exception e){
-        PusherPlugin.eventSinks.error("Pusher event error", e.getMessage(), e);
-
-        if (PusherPlugin.isLoggingEnabled) {
-            Log.d(PusherPlugin.TAG, "Pusher event error: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
     @Override
     public void onSubscriptionSucceeded(String channelName) {
-        this.onEvent(PusherPlugin.toPusherEvent(channelName, SUBSCRIPTION_SUCCESS_EVENT));
+        this.onEvent(toPusherEvent(channelName, SUBSCRIPTION_SUCCESS_EVENT, null, null));
     }
 }
 
@@ -455,27 +481,27 @@ class PresenceChannelChannelListener extends EventChannelListener implements Pre
 
     @Override
     public void onSubscriptionSucceeded(String channelName) {
-        this.onEvent(PusherPlugin.toPusherEvent(channelName, SUBSCRIPTION_SUCCESS_EVENT));
+        this.onEvent(toPusherEvent(channelName, SUBSCRIPTION_SUCCESS_EVENT, null, null));
     }
 
     @Override
     public void onAuthenticationFailure(String message, Exception e) {
-        // TODO
+        onError(e);
     }
 
     @Override
     public void onUsersInformationReceived(String channelName, Set<User> users) {
-        this.onEvent(PusherPlugin.toPusherEvent(channelName, SUBSCRIPTION_SUCCESS_EVENT));
+        this.onEvent(toPusherEvent(channelName, SUBSCRIPTION_SUCCESS_EVENT, null, users.toString()));
     }
 
     @Override
     public void userSubscribed(String channelName, User user) {
-        this.onEvent(PusherPlugin.toPusherEvent(channelName, MEMBER_ADDED_EVENT));
+        this.onEvent(toPusherEvent(channelName, MEMBER_ADDED_EVENT, user.getId(), null));
     }
 
     @Override
     public void userUnsubscribed(String channelName, User user) {
-        this.onEvent(PusherPlugin.toPusherEvent(channelName, MEMBER_REMOVED_EVENT));
+        this.onEvent(toPusherEvent(channelName, MEMBER_REMOVED_EVENT, user.getId(), null));
     }
 }
 
@@ -483,12 +509,12 @@ class PrivateChannelChannelListener extends EventChannelListener implements Priv
 
     @Override
     public void onSubscriptionSucceeded(String channelName) {
-        this.onEvent(PusherPlugin.toPusherEvent(channelName, SUBSCRIPTION_SUCCESS_EVENT));
+        this.onEvent(toPusherEvent(channelName, SUBSCRIPTION_SUCCESS_EVENT, null, null));
     }
 
     @Override
     public void onAuthenticationFailure(String message, Exception e) {
-       // TODO
+        onError(e);
     }
 
 }
