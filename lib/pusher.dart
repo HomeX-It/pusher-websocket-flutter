@@ -145,7 +145,7 @@ class BindArgs {
 
 @JsonSerializable()
 class PusherOptions {
-  PusherAuth pusherAuth;
+  PusherAuth auth;
   String cluster;
   String host;
   int port;
@@ -153,7 +153,7 @@ class PusherOptions {
   int activityTimeout;
 
   PusherOptions({
-    this.pusherAuth,
+    this.auth,
     this.cluster, // eg. eu, us2, ...
     this.host, // default: "ws.pusherapp.com", with cluster: "ws-eu.pusherapp.com"
     this.port = 443,
@@ -174,7 +174,7 @@ class PusherAuth {
 
   PusherAuth({
     @required this.endpoint, // eg. https://api.example.com/broadcating/auth
-    this.headers = const {'Content-Type': 'application/json'},
+    this.headers = const {'Content-Type': 'application/x-www-form-urlencoded'},
   });
 
   factory PusherAuth.fromJson(Map<String, dynamic> json) =>

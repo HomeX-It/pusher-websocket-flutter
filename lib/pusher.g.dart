@@ -36,9 +36,9 @@ Map<String, dynamic> _$BindArgsToJson(BindArgs instance) => <String, dynamic>{
 
 PusherOptions _$PusherOptionsFromJson(Map<String, dynamic> json) {
   return PusherOptions(
-    pusherAuth: json['pusherAuth'] == null
+    auth: json['auth'] == null
         ? null
-        : PusherAuth.fromJson(json['pusherAuth'] as Map<String, dynamic>),
+        : PusherAuth.fromJson(json['auth'] as Map<String, dynamic>),
     cluster: json['cluster'] as String,
     host: json['host'] as String,
     port: json['port'] as int,
@@ -49,7 +49,7 @@ PusherOptions _$PusherOptionsFromJson(Map<String, dynamic> json) {
 
 Map<String, dynamic> _$PusherOptionsToJson(PusherOptions instance) =>
     <String, dynamic>{
-      'pusherAuth': instance.pusherAuth,
+      'auth': instance.auth,
       'cluster': instance.cluster,
       'host': instance.host,
       'port': instance.port,
