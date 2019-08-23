@@ -118,9 +118,9 @@ class Pusher {
 
 @JsonSerializable()
 class InitArgs {
-  String appKey;
-  PusherOptions options;
-  bool isLoggingEnabled;
+  final String appKey;
+  final PusherOptions options;
+  final bool isLoggingEnabled;
 
   InitArgs(this.appKey, this.options, {this.isLoggingEnabled = false});
 
@@ -132,8 +132,8 @@ class InitArgs {
 
 @JsonSerializable()
 class BindArgs {
-  String channelName;
-  String eventName;
+  final String channelName;
+  final String eventName;
 
   BindArgs({this.channelName, this.eventName});
 
@@ -145,17 +145,17 @@ class BindArgs {
 
 @JsonSerializable()
 class PusherOptions {
-  PusherAuth auth;
-  String cluster;
-  String host;
-  int port;
-  bool encrypted;
-  int activityTimeout;
+  final PusherAuth auth;
+  final String cluster;
+  final  String host;
+  final int port;
+  final bool encrypted;
+  final int activityTimeout;
 
   PusherOptions({
     this.auth,
-    this.cluster, // eg. eu, us2, ...
-    this.host, // default: "ws.pusherapp.com", with cluster: "ws-eu.pusherapp.com"
+    this.cluster,
+    this.host,
     this.port = 443,
     this.encrypted = true,
     this.activityTimeout = 30000,
@@ -169,11 +169,11 @@ class PusherOptions {
 
 @JsonSerializable()
 class PusherAuth {
-  String endpoint;
-  Map<String, String> headers;
+ final String endpoint;
+ final Map<String, String> headers;
 
-  PusherAuth({
-    @required this.endpoint, // eg. https://api.example.com/broadcating/auth
+  PusherAuth(
+    this.endpoint, {
     this.headers = const {'Content-Type': 'application/x-www-form-urlencoded'},
   });
 
@@ -185,8 +185,8 @@ class PusherAuth {
 
 @JsonSerializable()
 class ConnectionStateChange {
-  String currentState;
-  String previousState;
+  final String currentState;
+  final String previousState;
 
   ConnectionStateChange({this.currentState, this.previousState});
 
@@ -198,9 +198,9 @@ class ConnectionStateChange {
 
 @JsonSerializable()
 class ConnectionError {
-  String message;
-  String code;
-  String exception;
+  final String message;
+  final String code;
+  final String exception;
 
   ConnectionError({this.message, this.code, this.exception});
 
@@ -212,9 +212,9 @@ class ConnectionError {
 
 @JsonSerializable()
 class Event {
-  String channel;
-  String event;
-  String data;
+  final String channel;
+  final String event;
+  final String data;
 
   Event({this.channel, this.event, this.data});
 
@@ -224,7 +224,7 @@ class Event {
 }
 
 class Channel {
-  String name;
+  final String name;
 
   Channel({this.name});
 
@@ -240,12 +240,14 @@ class Channel {
 
 @JsonSerializable()
 class PusherEventStreamMessage {
-  Event event;
-  ConnectionStateChange connectionStateChange;
-  ConnectionError connectionError;
+  final Event event;
+  final ConnectionStateChange connectionStateChange;
+  final ConnectionError connectionError;
 
   bool get isEvent => event != null;
+
   bool get isConnectionStateChange => connectionStateChange != null;
+
   bool get isConnectionError => connectionError != null;
 
   PusherEventStreamMessage(
