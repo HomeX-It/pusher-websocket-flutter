@@ -183,7 +183,7 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
                                 eventSinkObj(jsonString)
                                 
                                 if (SwiftPusherPlugin.isLoggingEnabled) {
-                                    print("Pusher event: CH:\(bindArgs.channelName) EN:\(bindArgs.eventName) ED:\(jsonString ?? "no data")")
+                                    print("Pusher event: CHANNEL:\(bindArgs.channelName) EVENT:\(bindArgs.eventName) DATA:\(jsonString ?? "no data")")
                                 }
                             }
                         }
