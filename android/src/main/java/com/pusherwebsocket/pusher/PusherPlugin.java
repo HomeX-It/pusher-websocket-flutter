@@ -73,7 +73,7 @@ public class PusherPlugin implements MethodCallHandler {
 
             @Override
             public void onCancel(Object args) {
-                Log.d(TAG, String.format("onCancel args: [%s]", args != null ? args.toString() : "null"));
+                Log.d(TAG, String.format("onCancel args: %s", args != null ? args.toString() : "null"));
             }
         });
     }
@@ -128,6 +128,7 @@ public class PusherPlugin implements MethodCallHandler {
             // setup options
             final PusherOptions pusherOptions = new PusherOptions();
 
+            pusherOptions.setPongTimeout(5000);
             if (options.has("auth")) {
                 final JSONObject auth = options.getJSONObject("auth");
                 final String endpoint = auth.getString("endpoint");
@@ -139,7 +140,7 @@ public class PusherPlugin implements MethodCallHandler {
             }
 
             if (options.has("activityTimeout")) {
-                pusherOptions.setPongTimeout(options.getInt("activityTimeout"));
+                pusherOptions.setActivityTimeout(options.getInt("activityTimeout"));
             }
             if (options.has("cluster")) {
                 pusherOptions.setCluster(options.getString("cluster"));
@@ -299,7 +300,7 @@ public class PusherPlugin implements MethodCallHandler {
         channels.remove(channelName);
 
         if (isLoggingEnabled) {
-            Log.d(TAG, String.format("unsubscribe ([%s])", channelName));
+            Log.d(TAG, String.format("unsubscribe (%s)", channelName));
         }
         result.success(null);
     }
@@ -326,12 +327,12 @@ public class PusherPlugin implements MethodCallHandler {
             }
 
             if (isLoggingEnabled) {
-                Log.d(TAG, String.format("bind ([%s])", eventName));
+                Log.d(TAG, String.format("bind (%s)", eventName));
             }
             result.success(null);
         } catch (Exception e) {
             if (isLoggingEnabled) {
-                Log.d(TAG, String.format("bind exception: [%s]", e.getMessage()));
+                Log.d(TAG, String.format("bind exception: %s", e.getMessage()));
                 e.printStackTrace();
             }
         }
@@ -358,12 +359,12 @@ public class PusherPlugin implements MethodCallHandler {
             }
 
             if (isLoggingEnabled) {
-                Log.d(TAG, String.format("unbind ([%s])", eventName));
+                Log.d(TAG, String.format("unbind (%s)", eventName));
             }
             result.success(null);
         } catch (Exception e) {
             if (isLoggingEnabled) {
-                Log.d(TAG, String.format("unbind exception: [%s]", e.getMessage()));
+                Log.d(TAG, String.format("unbind exception: %s", e.getMessage()));
                 e.printStackTrace();
             }
         }
@@ -433,7 +434,7 @@ class EventChannelListener implements ChannelEventListener {
                     PusherPlugin.eventSink.success(eventStreamMessageJson.toString());
 
                     if (PusherPlugin.isLoggingEnabled) {
-                        Log.d(TAG, String.format("onEvent: \nCHANNEL: [%s] \nEVENT: [%s] \nDATA: [%s]", channel, event, data));
+                        Log.d(TAG, String.format("onEvent: \nCHANNEL: %s \nEVENT: %s \nDATA: %s", channel, event, data));
                     }
                 } catch (Exception e) {
                     onError(e);
