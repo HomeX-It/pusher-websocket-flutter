@@ -9,3 +9,7 @@ build/
 .idea
 
 pubspec.lock
+
+gradlew
+gradlew.bat
+example/

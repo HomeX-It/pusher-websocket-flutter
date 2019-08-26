@@ -61,7 +61,11 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
             SwiftPusherPlugin.isLoggingEnabled = initArgs.isLoggingEnabled
             
             let options = PusherClientOptions(
-                host: .cluster(initArgs.options.cluster)
+                authMethod: initArgs.options.auth != nil ? AuthMethod.authRequestBuilder(authRequestBuilder: AuthRequestBuilder(endpoint: initArgs.options.auth!.endpoint, headers: initArgs.options.auth!.headers)): .noMethod,
+                host: initArgs.options.host != nil ? .host(initArgs.options.host!) : (initArgs.options.cluster != nil ? .cluster(initArgs.options.cluster!) : .host("ws.pusherapp.com")),
+                port: initArgs.options.port ?? (initArgs.options.encrypted ?? true ? 443 : 80),
+                encrypted: initArgs.options.encrypted ?? true,
+                activityTimeout: Double(initArgs.options.activityTimeout ?? 30000) / 1000
             )
             
             SwiftPusherPlugin.pusher = Pusher(
@@ -104,11 +108,40 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
     public func subscribe(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         if let pusherObj = SwiftPusherPlugin.pusher {
             let channelName = call.arguments as! String
-            let channel = pusherObj.subscribe(channelName)
+            let channelType = channelName.components(separatedBy: "-")[0]
+            var channel: PusherChannel
+            
+            switch channelType{
+            case "private":
+                channel = pusherObj.subscribe(channelName)
+                if (SwiftPusherPlugin.isLoggingEnabled) {
+                    print("Pusher subscribe (private)")
+                }
+            case "presence":
+                channel = pusherObj.subscribeToPresenceChannel(channelName: channelName)
+                if (SwiftPusherPlugin.isLoggingEnabled) {
+                    print("Pusher subscribe (presence)")
+                }
+            default:
+                channel = pusherObj.subscribe(channelName)
+                if (SwiftPusherPlugin.isLoggingEnabled) {
+                    print("Pusher subscribe")
+                }
+            }
+            
+            SwiftPusherPlugin.channels[channelName] = channel;
+        }
+        result(nil);
+    }
+    
+    public func subscribeToPresence(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        if let pusherObj = SwiftPusherPlugin.pusher {
+            let channelName = call.arguments as! String
+            let channel = pusherObj.subscribeToPresenceChannel(channelName: channelName)
             SwiftPusherPlugin.channels[channelName] = channel;
             
             if (SwiftPusherPlugin.isLoggingEnabled) {
-                print("Pusher subscribe")
+                print("Pusher subscribe to presence channel")
             }
         }
         result(nil);
@@ -150,7 +183,7 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
                                 eventSinkObj(jsonString)
                                 
                                 if (SwiftPusherPlugin.isLoggingEnabled) {
-                                    print("Pusher event: CH:\(bindArgs.channelName) EN:\(bindArgs.eventName) ED:\(jsonString ?? "no data")")
+                                    print("Pusher event: CHANNEL:\(bindArgs.channelName) EVENT:\(bindArgs.eventName) DATA:\(jsonString ?? "no data")")
                                 }
                             }
                         }
@@ -161,7 +194,7 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
                     }
                 })
                 if (SwiftPusherPlugin.isLoggingEnabled) {
-                    print("Pusher bind")
+                    print("Pusher bind (\(bindArgs.eventName))")
                 }
             }
         } catch {
@@ -219,6 +252,41 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
     }
 }
 
+class AuthRequestBuilder: AuthRequestBuilderProtocol {
+    var endpoint: String
+    var headers: [String: String]
+    
+    init(endpoint: String, headers: [String: String]) {
+        self.endpoint = endpoint
+        self.headers = headers
+    }
+    
+    func requestFor(socketID: String, channelName: String) -> URLRequest? {
+        do{
+            var request = URLRequest(url: URL(string: endpoint)!)
+            request.httpMethod = "POST"
+            
+            if(headers.values.contains("application/json")){
+                let jsonEncoder = JSONEncoder()
+                request.httpBody = try jsonEncoder.encode(["socket_id": socketID, "channel_name": channelName])
+            }else{
+                request.httpBody = "socket_id=\(socketID)&channel_name=\(channelName)".data(using: String.Encoding.utf8)
+            }
+            
+            for (key, value) in headers {
+                request.addValue(value, forHTTPHeaderField: key)
+            }
+            return request
+        }catch {
+            if (SwiftPusherPlugin.isLoggingEnabled) {
+                print("Authentication error:" + error.localizedDescription)
+            }
+            return nil
+        }
+        
+    }
+}
+
 class StreamHandler: NSObject, FlutterStreamHandler {
     public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
         SwiftPusherPlugin.eventSink = events
@@ -237,7 +305,17 @@ struct InitArgs: Codable {
 }
 
 struct Options: Codable {
-    var cluster: String
+    var cluster: String?
+    var host: String?
+    var port: Int?
+    var encrypted: Bool?
+    var auth: Auth?
+    var activityTimeout: Int?
+}
+
+struct Auth: Codable{
+    var endpoint: String
+    var headers: [String: String]
 }
 
 struct PusherEventStreamMessage: Codable {
