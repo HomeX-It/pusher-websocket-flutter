@@ -47,15 +47,23 @@ PusherOptions _$PusherOptionsFromJson(Map<String, dynamic> json) {
   );
 }
 
-Map<String, dynamic> _$PusherOptionsToJson(PusherOptions instance) =>
-    <String, dynamic>{
-      'auth': instance.auth,
-      'cluster': instance.cluster,
-      'host': instance.host,
-      'port': instance.port,
-      'encrypted': instance.encrypted,
-      'activityTimeout': instance.activityTimeout,
-    };
+Map<String, dynamic> _$PusherOptionsToJson(PusherOptions instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('auth', instance.auth);
+  writeNotNull('cluster', instance.cluster);
+  writeNotNull('host', instance.host);
+  writeNotNull('port', instance.port);
+  writeNotNull('encrypted', instance.encrypted);
+  writeNotNull('activityTimeout', instance.activityTimeout);
+  return val;
+}
 
 PusherAuth _$PusherAuthFromJson(Map<String, dynamic> json) {
   return PusherAuth(

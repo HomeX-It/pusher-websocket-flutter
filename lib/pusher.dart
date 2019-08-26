@@ -142,7 +142,7 @@ class BindArgs {
   Map<String, dynamic> toJson() => _$BindArgsToJson(this);
 }
 
-@JsonSerializable()
+@JsonSerializable(includeIfNull: false)
 class PusherOptions {
   final PusherAuth auth;
   final String cluster;

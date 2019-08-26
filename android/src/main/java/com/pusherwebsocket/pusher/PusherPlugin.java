@@ -128,12 +128,10 @@ public class PusherPlugin implements MethodCallHandler {
             // setup options
             final PusherOptions pusherOptions = new PusherOptions();
 
-            pusherOptions.setPongTimeout(5000);
             if (options.has("auth")) {
                 final JSONObject auth = options.getJSONObject("auth");
                 final String endpoint = auth.getString("endpoint");
-                final Type mapType = new TypeToken<Map<String, String>>() {
-                }.getType();
+                final Type mapType = new TypeToken<Map<String, String>>() {}.getType();
                 final Map<String, String> headers = new Gson().fromJson(auth.get("headers").toString(), mapType);
 
                 pusherOptions.setAuthorizer(getAuthorizer(endpoint, headers));
