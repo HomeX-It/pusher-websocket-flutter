@@ -1,3 +1,10 @@
+## 0.1.0
+Thanks to GillesMontyne
+
+Readme updated with better usage information
+Support for Pusher's auth system
+Better configurability in PusherOptions (host, port, encrypted, activityTimeout)
+
 ## 0.0.8
 
 Update json_annotation and json_serializable
