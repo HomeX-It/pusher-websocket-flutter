@@ -6,7 +6,8 @@ environment:
   sdk: ">=2.1.0 <3.0.0"
 
 dependencies:
-  pusher_websocket_flutter: ^0.1.0
+  pusher_websocket_flutter:
+    path: ../
 
   flutter:
     sdk: flutter
