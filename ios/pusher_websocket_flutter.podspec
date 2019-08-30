@@ -3,7 +3,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'pusher_websocket_flutter'
-  s.version          = '0.0.8'
+  s.version          = '0.1.1'
   s.summary          = 'A new flutter plugin project.'
   s.description      = <<-DESC
 Pusher Flutter Client
