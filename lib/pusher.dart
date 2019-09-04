@@ -146,7 +146,7 @@ class BindArgs {
 class PusherOptions {
   final PusherAuth auth;
   final String cluster;
-  final  String host;
+  final String host;
   final int port;
   final bool encrypted;
   final int activityTimeout;
@@ -168,8 +168,8 @@ class PusherOptions {
 
 @JsonSerializable()
 class PusherAuth {
- final String endpoint;
- final Map<String, String> headers;
+  final String endpoint;
+  final Map<String, String> headers;
 
   PusherAuth(
     this.endpoint, {

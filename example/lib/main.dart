@@ -25,7 +25,8 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> initPusher() async {
     try {
-      await Pusher.init("APP_KEY", PusherOptions(cluster: "us2"), enableLogging: true);
+      await Pusher.init("APP_KEY", PusherOptions(cluster: "us2"),
+          enableLogging: true);
     } on PlatformException catch (e) {
       print(e.message);
     }
@@ -75,7 +76,8 @@ class _MyAppState extends State<MyApp> {
                     RaisedButton(
                       child: Text("Subscribe"),
                       onPressed: () async {
-                        channel = await Pusher.subscribe(channelController.text);
+                        channel =
+                            await Pusher.subscribe(channelController.text);
                       },
                     )
                   ],
