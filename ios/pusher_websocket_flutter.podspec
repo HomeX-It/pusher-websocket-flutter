@@ -3,7 +3,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'pusher_websocket_flutter'
-  s.version          = '0.0.8'
+  s.version          = '0.1.1'
   s.summary          = 'A new flutter plugin project.'
   s.description      = <<-DESC
 Pusher Flutter Client
@@ -14,9 +14,9 @@ Pusher Flutter Client
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.public_header_files = 'Classes/**/*.h'
+  s.swift_version = '4.2'
   s.dependency 'Flutter'
   s.dependency 'PusherSwift', '7.0.0'
-  s.static_framework = true
 
   s.ios.deployment_target = '9.0'
 end
