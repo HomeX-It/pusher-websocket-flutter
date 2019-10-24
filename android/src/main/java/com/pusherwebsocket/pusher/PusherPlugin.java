@@ -37,8 +37,6 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
 
-import static com.pusherwebsocket.pusher.PusherPlugin.TAG;
-
 /**
  * PusherPlugin
  */
@@ -432,7 +430,7 @@ class EventChannelListener implements ChannelEventListener {
                     PusherPlugin.eventSink.success(eventStreamMessageJson.toString());
 
                     if (PusherPlugin.isLoggingEnabled) {
-                        Log.d(TAG, String.format("onEvent: \nCHANNEL: %s \nEVENT: %s \nDATA: %s", channel, event, data));
+                        Log.d(PusherPlugin.TAG, String.format("onEvent: \nCHANNEL: %s \nEVENT: %s \nDATA: %s", channel, event, data));
                     }
                 } catch (Exception e) {
                     onError(e);
@@ -457,12 +455,12 @@ class EventChannelListener implements ChannelEventListener {
                     PusherPlugin.eventSink.success(eventStreamMessageJson.toString());
 
                     if (PusherPlugin.isLoggingEnabled) {
-                        Log.d(TAG, "onError : " + e.getMessage());
+                        Log.d(PusherPlugin.TAG, "onError : " + e.getMessage());
                         e.printStackTrace();
                     }
                 } catch (Exception ex) {
                     if (PusherPlugin.isLoggingEnabled) {
-                        Log.d(TAG, "onError exception: " + e.getMessage());
+                        Log.d(PusherPlugin.TAG, "onError exception: " + e.getMessage());
                         ex.printStackTrace();
                     }
                 }
