@@ -7,7 +7,8 @@ part 'pusher.g.dart';
 /// Used to listen to events sent through pusher
 class Pusher {
   Pusher._();
-
+  
+  static String _socketId;
   static const _channel = const MethodChannel('pusher');
   static const _eventChannel = const EventChannel('pusherStream');
 
@@ -58,6 +59,9 @@ class Pusher {
     await _channel.invokeMethod('subscribe', channelName);
     return Channel(name: channelName);
   }
+  static String getSocketId() {
+    return _socketId;
+  }
 
   /// Unsubscribe from a channel
   static Future unsubscribe(String channelName) async {
@@ -88,7 +92,7 @@ class Pusher {
     await _channel.invokeMethod('unbind', bindArgs);
   }
 
-  static void _handleEvent([dynamic arguments]) {
+  static void _handleEvent([dynamic arguments]) async {
     if (arguments == null || !(arguments is String)) {
       //TODO log
     }
@@ -106,6 +110,7 @@ class Pusher {
     } else if (message.isConnectionStateChange) {
       if (_onConnectionStateChange != null) {
         _onConnectionStateChange(message.connectionStateChange);
+        _socketId = await _channel.invokeMethod('getSocketId');
       }
     } else if (message.isConnectionError) {
       if (_onError != null) {
