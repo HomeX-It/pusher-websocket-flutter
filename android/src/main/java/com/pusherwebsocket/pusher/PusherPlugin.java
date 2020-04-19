@@ -369,15 +369,8 @@ public class PusherPlugin implements MethodCallHandler {
         }
     }
     
-    public func getSocketId(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        if let pusherObj = SwiftPusherPlugin.pusher {
-            if (SwiftPusherPlugin.isLoggingEnabled) {
-                print("Pusher connect socketId")
-            }
-			result(pusherObj.connection.socketId);
-			return;
-        }
-        result(nil);
+    private void getSocketId(MethodCall call, MethodChannel.Result result) {
+        result.success(pusher.getConnection().getSocketId());
     }
 }
 
