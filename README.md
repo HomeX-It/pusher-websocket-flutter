@@ -46,6 +46,9 @@ If you have trouble, try checking out the example_objc Flutter project.
 |-------------|--------|-------------------|
 |*channelName*|`String`|*Required* - provide the channel name to subscribe to (eg. `mychannel`, `private-mychannel` or `presence-mychannel`).|
 
+## Pusher.getSocketId()
+Returns the current socket ID, updated after a connection change
+
 ## PusherOptions
 |Parameter        |Type         |Description		|
 |-----------------|-------------|-------------------|
@@ -63,5 +66,7 @@ If you have trouble, try checking out the example_objc Flutter project.
 |*headers*	|`Map<String,String>`|*Optional* - The headers that should be sent with the POST request to the above endpoint. 2 Different *Content-Types* are supported: `application/x-www-form-urlencoded` & `application/json`. Supplying any of the above types will result into the request body being sent in `form-urlencoded` format or `JSON` format. Defaults to `{'Content-Type': 'application/x-www-form-urlencoded'}`|
 
   
-## Development  
-Generate the models and the factories: `flutter packages pub run build_runner build --delete-conflicting-outputs`
+## Development
+This project uses code generation. Run after changing models in the project.
+ 
+`flutter packages pub run build_runner build --delete-conflicting-outputs`

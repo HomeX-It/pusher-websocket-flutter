@@ -7,13 +7,13 @@ part 'pusher.g.dart';
 /// Used to listen to events sent through pusher
 class Pusher {
   Pusher._();
-  
-  static String _socketId;
+
   static const _channel = const MethodChannel('pusher');
   static const _eventChannel = const EventChannel('pusherStream');
 
   static void Function(ConnectionStateChange) _onConnectionStateChange;
   static void Function(ConnectionError) _onError;
+  static String _socketId;
 
   static Map<String, void Function(Event)> eventCallbacks =
       Map<String, void Function(Event)>();
@@ -59,6 +59,8 @@ class Pusher {
     await _channel.invokeMethod('subscribe', channelName);
     return Channel(name: channelName);
   }
+
+  /// Get the current socket ID, updated after a connection change
   static String getSocketId() {
     return _socketId;
   }
