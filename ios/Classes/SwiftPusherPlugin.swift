@@ -35,6 +35,8 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
             bind(call, result: result)
         case "unbind":
             unbind(call, result: result)
+        case "getSocketId":
+            getSocketId(call, result: result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -249,6 +251,17 @@ public class SwiftPusherPlugin: NSObject, FlutterPlugin, PusherDelegate {
                 print("Pusher changedConnectionState error:" + error.localizedDescription)
             }
         }
+    }
+    
+    public func getSocketId(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        if let pusherObj = SwiftPusherPlugin.pusher {
+            if (SwiftPusherPlugin.isLoggingEnabled) {
+                print("Pusher connect socketId")
+            }
+			result(pusherObj.connection.socketId);
+			return;
+        }
+        result(nil);
     }
 }
 

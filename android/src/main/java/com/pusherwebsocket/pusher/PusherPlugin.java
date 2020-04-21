@@ -100,6 +100,9 @@ public class PusherPlugin implements MethodCallHandler {
             case "unbind":
                 unbind(call, result);
                 break;
+            case "getSocketId":
+                getSocketId(call, result);
+                break;
             default:
                 result.notImplemented();
                 break;
@@ -364,6 +367,10 @@ public class PusherPlugin implements MethodCallHandler {
                 e.printStackTrace();
             }
         }
+    }
+    
+    private void getSocketId(MethodCall call, MethodChannel.Result result) {
+        result.success(pusher.getConnection().getSocketId());
     }
 }
 
