@@ -6,7 +6,7 @@ Get it from [pub](https://pub.dev/packages/pusher_websocket_flutter).
 * Add to your pubspec.yaml
 ```
 dependencies:
-  pusher_websocket_flutter: ^0.1.1
+  pusher_websocket_flutter: ^0.2.0
 ```
 * In `/ios/Podfile`, set global platform to at least 9.0
 `platform :ios, '9.0'`
