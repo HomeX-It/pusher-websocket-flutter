@@ -1,5 +1,6 @@
 name: example_objc
-description: A new Flutter project.
+description: Demonstrates how to use the pusher plugin.
+
 version: 1.0.0+1
 
 environment:
@@ -12,7 +13,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  cupertino_icons: ^0.1.2
+  cupertino_icons: ^0.1.3
 
 dev_dependencies:
   flutter_test:
