@@ -1,3 +1,9 @@
+## 0.2.0
+Thanks to MohammedYAmmar
+
+* Added the ability to get the socket ID.
+* Bumped version of json_annotation
+
 ## 0.1.1
 
 * Minor changes to iOS podspec to help with ObjC based apps
